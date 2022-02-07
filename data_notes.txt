@@ -37,7 +37,7 @@ Potential methods for training data:
 
 
 
-Why is the current strategy of only training on 30 day increments bad?
+Potential consequences of current method?
 1. It completely ignores long term dependencies. Cycles can last years
 2. It may seem like you're only using the 'short term' ability of the model to predict the stock, but different stocks behave differently, even if you extend that time frame
 3. Although we are copying and pasting weights, we really are just randomly choosing random lines to train from, no context. The model will be useless
