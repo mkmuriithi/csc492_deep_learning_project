@@ -1,53 +1,58 @@
 import numpy as np
-import os
+import os, random, time, csv
 
+random.seed(time.time())
+
+DROPOUT = 0.90
 WINDOW_SIZE = 30
 VALID_START = '2019-01-01'
 TEST_START = '2020-06-01'
-paths = ['./nyse_15yr_data']
+paths = ['./nyse_15yr_data', './nasdaq_15yr_data']
 
 # Create data sets that include X and T
 train = []
 valid = []
 test = []
 
+# Iterate through datasets
 for path in paths:
     files = os.listdir(path)
     print(f"Found {len(files)} files in {path}")
     
+    # Iterate through stocks
     for file in files:
         filepath = os.path.join(path, file)
         
         try:
             with open(filepath) as f:
                 
-                # Date, Open, High, Low, Close, Adj Close, Volume
                 lines = f.readlines()[1:]
                 lines = [line.split(',') for line in lines]
                 stock = np.array(lines)
                 
-                # Open, High, Low, Close, Volume
                 dates = stock[:,0]
-                stock = np.concatenate((stock[:,1:5], stock[:,6:7]), axis=1).astype(float)
+                if len(dates) < 31:
+                    continue
                 
-                for i in range(stock.shape[0] - WINDOW_SIZE):
-                    # first = stock[i,:]
-                    # last = stock[i+WINDOW_SIZE,:]
-                    if dates[i+WINDOW_SIZE] < VALID_START:
-                        train.append(stock[i:i+WINDOW_SIZE+1,:])
-                    elif dates[i] >= VALID_START and dates[i+WINDOW_SIZE] < TEST_START:
-                        valid.append(stock[i:i+WINDOW_SIZE+1,:])
-                    elif dates[i] >= TEST_START:
-                        test.append(stock[i:i+WINDOW_SIZE+1,:])
+                if dates[30] < VALID_START:
+                    train.append(file[:-4])
+                elif dates[30] < TEST_START:
+                    valid.append(file[:-4])
+                else:
+                    test.append(file[:-4])
+                    
         except:
             pass
- 
-train = np.array(train)
-valid = np.array(valid)
-test = np.array(test)
+        
+random.shuffle(train)
+valid2, train = train[:len(valid)], train[len(valid):]
+test2, train = train[:len(test)], train[len(test):]
 
-print(f"T/V/T Split for {WINDOW_SIZE} day time frames:\n" + 
-      f"Train: {train.shape[0]} {WINDOW_SIZE}-day time frames\n" +
-      f"Valid: {valid.shape[0]} {WINDOW_SIZE}-day time frames\n" +
-      f"Test: {test.shape[0]} {WINDOW_SIZE}-day time frames\n")
+with open('datasets.csv', 'w', newline='') as file:
+    w = csv.writer(file)
+    w.writerows([train, valid, valid2, test, test2])
+    
+print(f"len(train): {len(train)}")
+print(f"len(valid): {len(valid)}")
+print(f"len(test): {len(test)}")
     
