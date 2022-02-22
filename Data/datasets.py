@@ -7,7 +7,7 @@ DROPOUT = 0.90
 WINDOW_SIZE = 30
 VALID_START = '2019-01-01'
 TEST_START = '2020-06-01'
-paths = ['./nyse_15yr_data', './nasdaq_15yr_data']
+paths = ['.\\nyse_15yr_data', '.\\nasdaq_15yr_data']
 
 # Create data sets that include X and T
 train = []
@@ -32,14 +32,19 @@ for path in paths:
                 
                 dates = stock[:,0]
                 if len(dates) < 31:
+                    print(f"skipping {file}: not enough dates")
+                    continue
+                
+                if any('' in line for line in lines):
+                    print(f"skipping {file}: found missing value")
                     continue
                 
                 if dates[30] < VALID_START:
-                    train.append(file[:-4])
+                    train.append(filepath[2:-4])
                 elif dates[30] < TEST_START:
-                    valid.append(file[:-4])
+                    valid.append(filepath[2:-4])
                 else:
-                    test.append(file[:-4])
+                    test.append(filepath[2:-4])
                     
         except:
             pass
