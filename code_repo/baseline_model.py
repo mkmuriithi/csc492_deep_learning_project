@@ -120,7 +120,7 @@ def train_model(model=model, train=train, valid1=valid, valid2=valid, batch_size
             train_x, train_t = batch_normalization(*create_batch(train, 256, seq_len))
             train_x, train_t = train_x[:,:,:-1], train_t[:,:-1] # removes volume parameter
             train_y = model(train_x)
-            train_loss = loss(train_y, train_t)
+            train_loss = torch.sqrt(loss(train_y, train_t))
             
             valid_x, valid_t = batch_normalization(*create_batch(valid, 256, seq_len))
             valid_x, valid_t = valid_x[:,:,:-1], valid_t[:,:-1] # removes volume parameter
