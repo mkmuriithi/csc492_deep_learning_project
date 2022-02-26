@@ -45,11 +45,6 @@ for path in paths:
                     bad_missing += 1
                     continue
                 
-                if any('NaN' in line for line in lines):
-                    bad_nan += 1
-                    print(f"skipping {file}: found NaN value")
-                    continue
-                
                 if dates[30] < VALID_START:
                     train.append(filepath[2:-4])
                 elif dates[30] < TEST_START:
