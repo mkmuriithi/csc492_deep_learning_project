@@ -2,6 +2,8 @@ from typing import List, Callable
 import os, csv, random, time
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import torch
 import torch.nn as nn
 
@@ -93,47 +95,42 @@ class RNNModel(nn.Module):
     def forward(self, x):
         return self.rnn(x)[0][:,-1,3:4]
 
-def eval_loss(model, train, valid, seq_len, loss):
-    train_x, train_t = batch_normalization(*create_batch(train, 256, seq_len))
-    train_x = train_x[:,:,:-1] # removes volume parameter
+def eval_loss(model, data, seq_len, loss, start_date=""):
+    x, t = batch_normalization(*create_batch(data, 256, seq_len, start_date))
+    x = x[:,:,:-1] # removes volume parameter, change later
     if torch.cuda.is_available():
-        train_x = train_x.to('cuda')
-        train_t = train_t.to('cuda')
+        x = x.to('cuda')
+        t = t.to('cuda')
         
-    train_y = model(train_x)
-    train_loss = torch.sqrt(loss(train_y, train_t))
-    
-    valid_x, valid_t = batch_normalization(*create_batch(valid, 256, seq_len))
-    valid_x = valid_x[:,:,:-1] # removes volume parameter
-    if torch.cuda.is_available():
-        valid_x = valid_x.to('cuda')
-        valid_t = valid_t.to('cuda')
+    y = model(x)
+    loss = loss(y, t)
         
-    valid_y = model(valid_x)
-    valid_loss = loss(valid_y, valid_t)
-        
-    return train_loss.item(), valid_loss.item()
+    return loss.item()
 
-def train_model(model, train=train, valid1=valid, valid2=valid, batch_size=64, 
-          seq_len=30, num_iters=1024, plot_iters=16, lrate=0.0001, weight_decay=0.0):
+def train_model(model, train=train, valid=valid, valid2=valid2, batch_size=128, 
+          seq_len=30, num_iters=2048, plot_iters=16, lrate=0.001, weight_decay=0.001):
     
     train_losses = []
     valid_losses = []
+    valid2_losses = []
     iter_steps = [0]
     
     loss = nn.MSELoss()
     optim = torch.optim.Adam(model.parameters(), lr=lrate, weight_decay=weight_decay)
     
-    train_loss, valid_loss = eval_loss(model, train, valid, seq_len, loss)
+    # Evaluate iteration 0 losses
+    train_loss = eval_loss(model, train, seq_len, loss)
+    valid_loss = eval_loss(model, valid, seq_len, loss)
+    valid2_loss = eval_loss(model, valid2, seq_len, loss, VALID_START)
     train_losses.append(train_loss)
     valid_losses.append(valid_loss)
-    print(f"Iteration 0 | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f}")
-    print(list(rnn.parameters())[0])
+    valid2_losses.append(valid2_loss)
+    print(f"Iteration 0 | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
     
     for i in trange(num_iters):
         # Create training batch
         x, t = batch_normalization(*create_batch(train, batch_size, seq_len))
-        x = x[:,:,:-1] # removes volume parameter
+        x = x[:,:,:-1] # removes volume parameter, change later
         if torch.cuda.is_available():
             x = x.to('cuda')
             t = t.to('cuda')
@@ -146,15 +143,24 @@ def train_model(model, train=train, valid1=valid, valid2=valid, batch_size=64,
         
         # Compute losses
         if (i + 1) % min(plot_iters, num_iters) == 0:
-            train_loss, valid_loss = eval_loss(model, train, valid, seq_len, loss)
+            train_loss = eval_loss(model, train, seq_len, loss)
+            valid_loss = eval_loss(model, valid, seq_len, loss)
+            valid2_loss = eval_loss(model, valid2, seq_len, loss, VALID_START)
             train_losses.append(train_loss)
             valid_losses.append(valid_loss)
+            valid2_losses.append(valid2_loss)
             iter_steps.append(i+1)
-            print(f"\nIteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f}")
-            print(list(rnn.parameters())[0])
+            print(f"\nIteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
             
-    return train_losses, valid_losses, iter_steps
+    return train_losses, valid_losses, valid2_losses, iter_steps
     
-rnn = RNNModel(hidden_size=4).cuda() # removes volume parameter
-train_losses, valid_losses, iter_steps = train_model(rnn)
+rnn = RNNModel(hidden_size=4).cuda() # removes volume parameter, change later
+train_losses, valid_losses, valid2_losses, iter_steps = train_model(rnn)
+plt.plot(iter_steps, train_losses, label="Train")
+plt.plot(iter_steps, valid_losses, label="Valid")
+plt.plot(iter_steps, valid2_losses, label="Valid2")
+plt.xticks(iter_steps)
+plt.legend()
+plt.title("RNN Baseline Model Training Curve")
+plt.show()
     
