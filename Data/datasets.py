@@ -1,7 +1,7 @@
 import numpy as np
 import os, random, time, csv
 
-random.seed(time.time())
+random.seed(87)
 
 DROPOUT = 0.90
 WINDOW_SIZE = 30
@@ -13,6 +13,10 @@ paths = ['.\\nyse_15yr_data', '.\\nasdaq_15yr_data']
 train = []
 valid = []
 test = []
+
+# Counters for bad files
+bad_date = 0
+bad_missing = 0
 
 # Iterate through datasets
 for path in paths:
@@ -33,10 +37,17 @@ for path in paths:
                 dates = stock[:,0]
                 if len(dates) < 31:
                     print(f"skipping {file}: not enough dates")
+                    bad_date += 1
                     continue
                 
                 if any('' in line for line in lines):
                     print(f"skipping {file}: found missing value")
+                    bad_missing += 1
+                    continue
+                
+                if any('NaN' in line for line in lines):
+                    bad_nan += 1
+                    print(f"skipping {file}: found NaN value")
                     continue
                 
                 if dates[30] < VALID_START:
@@ -48,6 +59,9 @@ for path in paths:
                     
         except:
             pass
+        
+print(f"{bad_date} files ignored due to not enough dates")
+print(f"{bad_missing} files ignored due to missing value")
         
 random.shuffle(train)
 valid2, train = train[:len(valid)], train[len(valid):]
