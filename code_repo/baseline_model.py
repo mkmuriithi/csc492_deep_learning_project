@@ -33,7 +33,7 @@ def create_batch(dataset: List[str], n: int, seq_len: int, start_date=""):
     """
     
     batch_x = np.ndarray((0,seq_len,5))
-    batch_t = np.ndarray((0,5))
+    batch_t = np.ndarray((0,1))
     
     # Sample stocks with replacement
     stocks = random.choices(dataset, k=n)
@@ -52,7 +52,7 @@ def create_batch(dataset: List[str], n: int, seq_len: int, start_date=""):
             
             # Remove date column, save time series and target value
             x, t = (stock_data[np.newaxis, start_index:start_index + seq_len,1:],
-                    stock_data[np.newaxis, start_index + seq_len,1:])
+                    stock_data[np.newaxis, start_index + seq_len,4:5])
             
             batch_x, batch_t = (np.concatenate([batch_x, x], axis=0).astype(float),
                                 np.concatenate([batch_t, t], axis=0).astype(float))
@@ -72,7 +72,7 @@ def batch_normalization(batch_x, batch_t):
 
     """
     # Normalize price-based features (% of previous day)
-    batch_t[:,:-1] = batch_t[:,:-1] / batch_x[:,-1,:-1]
+    batch_t = batch_t / batch_x[:,-1,3:4]
     batch_x[:,:,:-1] = batch_x[:,:,:-1] / torch.concat([batch_x[:,0:1,:-1], batch_x[:,:-1,:-1]], dim=1)
     
     # Normalize volume
@@ -91,23 +91,52 @@ class RNNModel(nn.Module):
                           batch_first=True, nonlinearity='relu')
         
     def forward(self, x):
-        return self.rnn(x)[0][:,-1,:]
+        return self.rnn(x)[0][:,-1,3:4]
+
+def eval_loss(model, train, valid, seq_len, loss):
+    train_x, train_t = batch_normalization(*create_batch(train, 256, seq_len))
+    train_x = train_x[:,:,:-1] # removes volume parameter
+    if torch.cuda.is_available():
+        train_x = train_x.to('cuda')
+        train_t = train_t.to('cuda')
+        
+    train_y = model(train_x)
+    train_loss = torch.sqrt(loss(train_y, train_t))
     
-model = RNNModel(hidden_size=4) # removes volume parameter
-    
-def train_model(model=model, train=train, valid1=valid, valid2=valid, batch_size=64, 
-          seq_len=30, num_iters=1024, plot_iters=16, lrate=0.0001, weight_decay=0.1):
+    valid_x, valid_t = batch_normalization(*create_batch(valid, 256, seq_len))
+    valid_x = valid_x[:,:,:-1] # removes volume parameter
+    if torch.cuda.is_available():
+        valid_x = valid_x.to('cuda')
+        valid_t = valid_t.to('cuda')
+        
+    valid_y = model(valid_x)
+    valid_loss = loss(valid_y, valid_t)
+        
+    return train_loss.item(), valid_loss.item()
+
+def train_model(model, train=train, valid1=valid, valid2=valid, batch_size=64, 
+          seq_len=30, num_iters=1024, plot_iters=16, lrate=0.0001, weight_decay=0.0):
     
     train_losses = []
     valid_losses = []
+    iter_steps = [0]
     
     loss = nn.MSELoss()
     optim = torch.optim.Adam(model.parameters(), lr=lrate, weight_decay=weight_decay)
     
+    train_loss, valid_loss = eval_loss(model, train, valid, seq_len, loss)
+    train_losses.append(train_loss)
+    valid_losses.append(valid_loss)
+    print(f"Iteration 0 | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f}")
+    print(list(rnn.parameters())[0])
+    
     for i in trange(num_iters):
         # Create training batch
         x, t = batch_normalization(*create_batch(train, batch_size, seq_len))
-        x, t = x[:,:,:-1], t[:,:-1] # removes volume parameter
+        x = x[:,:,:-1] # removes volume parameter
+        if torch.cuda.is_available():
+            x = x.to('cuda')
+            t = t.to('cuda')
         
         optim.zero_grad()
         y = model(x)
@@ -116,19 +145,16 @@ def train_model(model=model, train=train, valid1=valid, valid2=valid, batch_size
         optim.step()
         
         # Compute losses
-        if i % min(plot_iters, num_iters - 1) == 0:
-            train_x, train_t = batch_normalization(*create_batch(train, 256, seq_len))
-            train_x, train_t = train_x[:,:,:-1], train_t[:,:-1] # removes volume parameter
-            train_y = model(train_x)
-            train_loss = torch.sqrt(loss(train_y, train_t))
+        if (i + 1) % min(plot_iters, num_iters) == 0:
+            train_loss, valid_loss = eval_loss(model, train, valid, seq_len, loss)
+            train_losses.append(train_loss)
+            valid_losses.append(valid_loss)
+            iter_steps.append(i+1)
+            print(f"\nIteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f}")
+            print(list(rnn.parameters())[0])
             
-            valid_x, valid_t = batch_normalization(*create_batch(valid, 256, seq_len))
-            valid_x, valid_t = valid_x[:,:,:-1], valid_t[:,:-1] # removes volume parameter
-            valid_y = model(valid_x)
-            valid_loss = loss(valid_y, valid_t)
-                
-            train_losses.append(train_loss.item())
-            valid_losses.append(valid_loss.item())
-            
-    return train_losses, valid_losses
+    return train_losses, valid_losses, iter_steps
+    
+rnn = RNNModel(hidden_size=4).cuda() # removes volume parameter
+train_losses, valid_losses, iter_steps = train_model(rnn)
     
