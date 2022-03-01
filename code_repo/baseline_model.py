@@ -70,6 +70,7 @@ def batch_normalization(batch_x, batch_t):
                         first step always == 1.0
 
     """
+    
     # Normalize price-based features (% of previous day)
     batch_t = batch_t / batch_x[:,-1,3:4]
     #batch_x[:,:,:-1] = batch_x[:,:,:-1] / torch.concat([batch_x[:,0:1,:-1], batch_x[:,:-1,:-1]], dim=1)
@@ -85,7 +86,7 @@ class RNNModel(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
-        super(RNNModel, self).__init__()
+        super().__init__()
         self.rnn = nn.RNN(5, hidden_size, num_layers, batch_first=True)
         self.dense = nn.Sequential(nn.Linear(hidden_size, hidden_size // 2),
                                    nn.ReLU(),
@@ -95,6 +96,22 @@ class RNNModel(nn.Module):
         x = self.rnn(x)[0][:,-1]
         x = self.dense(x)
         return x
+    
+class MLPModel(nn.Module):
+    def __init__(self, hidden_sizes=[4096, 256, 16, 1]):
+        super().__init__()
+        
+        hidden_sizes = [30*5] + hidden_sizes
+        layers = [nn.Flatten()]
+        for i in range(len(hidden_sizes) - 1):
+            if i > 0:
+                layers.append(nn.ReLU())
+            layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]))
+            
+        self.layers = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        return self.layers(x)
 
 def eval_loss(model, data, batch_size, seq_len, loss, start_date=""):
     x, t = batch_normalization(*create_batch(data, batch_size, seq_len, start_date))
@@ -107,8 +124,8 @@ def eval_loss(model, data, batch_size, seq_len, loss, start_date=""):
         
     return loss
 
-def train_model(model, train=train, valid=valid, valid2=valid2, batch_size=512, 
-          seq_len=30, num_iters=128, plot_iters=16, lrate=0.001, weight_decay=0):
+def train_model(model, train=train, valid=valid, valid2=valid2, batch_size=128, 
+          seq_len=30, num_iters=2048, plot_iters=16, lrate=1e-6, weight_decay=0):
     
     train_losses = []
     valid_losses = []
@@ -145,7 +162,8 @@ def train_model(model, train=train, valid=valid, valid2=valid2, batch_size=512,
             print(f"\nIteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
             
     return train_losses, valid_losses, valid2_losses, iter_steps
-    
+   
+""" 
 valid_curves = []
 base_rnn = RNNModel().cuda()
 for lr in [1e-2, 1e-3, 1e-4]:
@@ -159,5 +177,15 @@ for valid_curve in valid_curves:
     plt.plot(iter_steps, valid_curve[:-1], label=valid_curve[-1])
 plt.legend()
 plt.title("Hyperparameter Tuning")
+plt.show()
+"""
+
+model = MLPModel().cuda()
+train_losses, valid_losses, valid2_losses, iter_steps = train_model(model)
+plt.plot(iter_steps, train_losses, label="Train")
+plt.plot(iter_steps, valid_losses, label="Valid")
+plt.plot(iter_steps, valid2_losses, label="Valid2")
+plt.legend()
+plt.title("MLP Model")
 plt.show()
     
