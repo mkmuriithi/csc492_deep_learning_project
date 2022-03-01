@@ -60,6 +60,12 @@ random.shuffle(train)
 valid2, train = train[:len(valid)], train[len(valid):]
 test2, train = train[:len(test)], train[len(test):]
 
+print(f"train:  {len(train)}")
+print(f"valid:  {len(valid)}")
+print(f"valid2: {len(valid2)}")
+print(f"test:   {len(test)}")
+print(f"test2:  {len(test2)}")
+
 for name, stock_list in [("train_stocks.csv",  train),
                          ("valid_stocks.csv",  valid),
                          ("valid2_stocks.csv", valid2),
@@ -67,7 +73,8 @@ for name, stock_list in [("train_stocks.csv",  train),
                          ("test2_stocks.csv",  test2),]:
     with open(name, 'w+', newline='') as file:
         w = csv.writer(file)
-        w.writerows(stock_list)
+        for stock in stock_list:
+            w.writerow([stock])
 
 valid_array = np.zeros((0,WINDOW_SIZE+1,5))
 valid2_array = np.zeros((0,WINDOW_SIZE+1,5))
@@ -138,8 +145,8 @@ for filepath in tqdm(test2):
             index = random.randint(0, stock.shape[0] - (WINDOW_SIZE+1))
             test2_array = np.concatenate([test2_array, np.expand_dims(stock[index:index+WINDOW_SIZE+1,:], 0)], 0)
 
-np.save("./valid_data", valid)
-np.save("./valid2_data", valid2)
-np.save("./valid_data", test)
-np.save("./valid2_data", test2)
+np.save("./valid_data", valid_array)
+np.save("./valid2_data", valid2_array)
+np.save("./test_data", test_array)
+np.save("./test2_data", test2_array)
     
