@@ -5,19 +5,20 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from tqdm import trange, tqdm
+from data_loaders import *
 
 WINDOW_SIZE = 30
-VALID_START = '2019-01-01'
-TEST_START = '2020-06-01'
+TRAIN_PATH = "../Data/train_stocks.csv"
+VALID_PATH = "../Data/valid_data.npy"
+VALID2_PATH = "../Data/valid2_data.npy"
+TEST_PATH = "../Data/test_data.npy"
+TEST2_PATH = "../Data/test2_data.npy"
 
-datasets = []
-
-with open("../Data/datasets.csv") as file:
-    reader = csv.reader(file)
-    for row in reader:
-         datasets.append(row)
-        
-train, valid, valid2, test, test2 = datasets
+train_loader = TrainLoader(TRAIN_PATH)
+valid_loader = ValidTestLoader(VALID_PATH)
+valid2_loader = ValidTestLoader(VALID2_PATH)
+test_loader = ValidTestLoader(TEST_PATH)
+test2_loader = ValidTestLoader(TEST2_PATH)
 
 random.seed(time.time())
 
@@ -79,7 +80,7 @@ def batch_normalization(batch_x, batch_t):
     #batch_t[:,-1] = batch_t[:,-1] / torch.max(batch_x[:,:,-1], axis=1)[0]
     #batch_x[:,:,-1] = batch_x[:,:,-1] / torch.unsqueeze(torch.max(batch_x[:,:,-1], axis=1)[0], dim=1)
     
-    return batch_x, batch_t
+    return torch.Tensor(batch_x), torch.Tensor(batch_t)
 
 class RNNModel(nn.Module):
     def __init__(self, hidden_size=64, num_layers=2):
@@ -98,14 +99,14 @@ class RNNModel(nn.Module):
         return x
     
 class MLPModel(nn.Module):
-    def __init__(self, hidden_sizes=[4096, 256, 16, 1]):
+    def __init__(self, hidden_sizes=[4096, 4096, 4096, 1]):
         super().__init__()
         
         hidden_sizes = [30*5] + hidden_sizes
         layers = [nn.Flatten()]
         for i in range(len(hidden_sizes) - 1):
             if i > 0:
-                layers.append(nn.ReLU())
+                layers.append(nn.Sigmoid())
             layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]))
             
         self.layers = nn.Sequential(*layers)
@@ -113,78 +114,54 @@ class MLPModel(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-def eval_loss(model, data, batch_size, seq_len, loss, start_date=""):
-    x, t = batch_normalization(*create_batch(data, batch_size, seq_len, start_date))
+def eval_loss(model, data_loader, loss_fn):
+    x, t = batch_normalization(*data_loader.load_data())
     if torch.cuda.is_available():
         x = x.to('cuda')
         t = t.to('cuda')
         
     y = model(x)
-    loss = torch.sqrt(loss(y, t))
+    loss = loss_fn(y, t)
         
     return loss
 
-def train_model(model, train=train, valid=valid, valid2=valid2, batch_size=128, 
-          seq_len=30, num_iters=2048, plot_iters=16, lrate=1e-6, weight_decay=0):
+def train_model(model, train_loader=train_loader, valid_loader=valid_loader, 
+                valid2_loader=valid2_loader, seq_len=WINDOW_SIZE, 
+                num_iters=20, lrate=1e-3, weight_decay=0):
     
     train_losses = []
     valid_losses = []
     valid2_losses = []
-    iter_steps = [0]
     
-    loss = nn.MSELoss()
+    loss_fn = (lambda y, t: 
+               torch.sqrt(nn.MSELoss()(y, t))
+               )
     optim = torch.optim.Adam(model.parameters(), lr=lrate, weight_decay=weight_decay)
     
-    # Evaluate iteration 0 losses
-    train_loss = eval_loss(model, train, batch_size, seq_len, loss)
-    valid_loss = eval_loss(model, valid, batch_size, seq_len, loss, VALID_START)
-    valid2_loss = eval_loss(model, valid2, batch_size, seq_len, loss, VALID_START)
-    train_losses.append(train_loss.item())
-    valid_losses.append(valid_loss.item())
-    valid2_losses.append(valid2_loss.item())
-    print(f"Iteration 0 | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
-    
-    for i in trange(num_iters):
+    for i in range(num_iters):
+        
+        # Training step
         optim.zero_grad()
-        train_loss = torch.sqrt(eval_loss(model, train, batch_size, seq_len, loss))
+        train_loss = eval_loss(model, train_loader, loss_fn)
         train_loss.backward()
         optim.step()
-        
-        # Compute losses
-        if (i + 1) % min(plot_iters, num_iters) == 0:
-            train_loss = eval_loss(model, train, batch_size, seq_len, loss)
-            valid_loss = eval_loss(model, valid, batch_size, seq_len, loss, VALID_START)
-            valid2_loss = eval_loss(model, valid2, batch_size, seq_len, loss, VALID_START)
-            train_losses.append(train_loss.item())
-            valid_losses.append(valid_loss.item())
-            valid2_losses.append(valid2_loss.item())
-            iter_steps.append(i+1)
-            print(f"\nIteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
             
-    return train_losses, valid_losses, valid2_losses, iter_steps
+        # Evaluate loss
+        train_loss = eval_loss(model, train_loader, loss_fn).item()
+        valid_loss = eval_loss(model, valid_loader, loss_fn).item()
+        valid2_loss = eval_loss(model, valid2_loader, loss_fn).item()
+        train_losses.append(train_loss)
+        valid_losses.append(valid_loss)
+        valid2_losses.append(valid2_loss)
+        print(f"Epoch {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
+        
+    return train_losses, valid_losses, valid2_losses
    
-""" 
-valid_curves = []
-base_rnn = RNNModel().cuda()
-for lr in [1e-2, 1e-3, 1e-4]:
-    rnn = RNNModel().cuda()
-    rnn.load_state_dict(base_rnn.state_dict())
-    train_losses, valid_losses, valid2_losses, iter_steps = train_model(rnn, lrate=lr, num_iters=512, plot_iters=4)
-    valid_curves.append(valid_losses + [f"lr={lr} Valid"])
-    valid_curves.append(valid2_losses + [f"lr={lr} Valid2"])
-    
-for valid_curve in valid_curves:
-    plt.plot(iter_steps, valid_curve[:-1], label=valid_curve[-1])
-plt.legend()
-plt.title("Hyperparameter Tuning")
-plt.show()
-"""
-
 model = MLPModel().cuda()
-train_losses, valid_losses, valid2_losses, iter_steps = train_model(model)
-plt.plot(iter_steps, train_losses, label="Train")
-plt.plot(iter_steps, valid_losses, label="Valid")
-plt.plot(iter_steps, valid2_losses, label="Valid2")
+train_losses, valid_losses, valid2_losses = train_model(model)
+plt.plot(train_losses, label="Train")
+plt.plot(valid_losses, label="Valid")
+plt.plot(valid2_losses, label="Valid2")
 plt.legend()
 plt.title("MLP Model")
 plt.show()
