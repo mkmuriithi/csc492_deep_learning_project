@@ -74,5 +74,5 @@ def train_linear(df_allstocks):
 
 def make_supervised(df):
     # make dataset into supervised problem
-    df["y"] = df["Close"].shift(periods=1)
+    df["y"] = df["Close"].shift(periods=-11)
     return df
