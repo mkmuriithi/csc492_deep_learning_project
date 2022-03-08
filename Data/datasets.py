@@ -46,7 +46,7 @@ for path in paths:
                     bad_missing += 1
                     continue
                 
-                if np.any(stock[:,1:5].astype(float) == 0):
+                if np.any(stock[:,1:6].astype(float) == 0):
                     has_zero = filepath
                     bad_zero += 1
                     continue
@@ -98,7 +98,7 @@ for filepath in tqdm(valid):
         stock = stock[(VALID_START <= stock[:,0]) & (stock[:,0] < TEST_START)]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
         
         # Replace 0 volume with 1 volume
         stock[:,-1] += (stock[:,-1] == 0)
@@ -117,7 +117,7 @@ for filepath in tqdm(valid2):
         stock = stock[(VALID_START <= stock[:,0]) & (stock[:,0] < TEST_START)]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
         
         # Replace 0 volume with 1 volume
         stock[:,-1] += (stock[:,-1] == 0)
@@ -136,7 +136,7 @@ for filepath in tqdm(test):
         stock = stock[TEST_START <= stock[:,0]]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
         
         # Replace 0 volume with 1 volume
         stock[:,-1] += (stock[:,-1] == 0)
@@ -155,7 +155,7 @@ for filepath in tqdm(test2):
         stock = stock[TEST_START <= stock[:,0]]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
         
         # Replace 0 volume with 1 volume
         stock[:,-1] += (stock[:,-1] == 0)
