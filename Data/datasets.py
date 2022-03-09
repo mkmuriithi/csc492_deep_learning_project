@@ -13,10 +13,13 @@ paths = ['nyse_15yr_data']
 train = []
 valid = []
 test = []
+valid2 = []
+test2 = []
 
 # Counters for bad files
 bad_date = 0
 bad_missing = 0
+bad_zero = 0
 
 # Iterate through datasets
 for path in paths:
@@ -43,22 +46,26 @@ for path in paths:
                     bad_missing += 1
                     continue
                 
+                if np.any(stock[:,1:6].astype(float) == 0):
+                    has_zero = filepath
+                    bad_zero += 1
+                    continue
+                
                 if dates[30] < VALID_START:
                     train.append(filepath)
-                elif dates[30] < TEST_START:
                     valid.append(filepath)
-                else:
                     test.append(filepath)
+                elif dates[30] < TEST_START:
+                    valid2.append(filepath)
+                else:
+                    test2.append(filepath)
                     
         except:
             pass
         
 print(f"\n{bad_date} files ignored due to not enough dates")
 print(f"{bad_missing} files ignored due to missing value")
-        
-random.shuffle(train)
-valid2, train = train[:len(valid)], train[len(valid):]
-test2, train = train[:len(test)], train[len(test):]
+print(f"{bad_zero} files ignored due to zero value in price")
 
 print(f"train:  {len(train)}")
 print(f"valid:  {len(valid)}")
@@ -91,7 +98,10 @@ for filepath in tqdm(valid):
         stock = stock[(VALID_START <= stock[:,0]) & (stock[:,0] < TEST_START)]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
+        
+        # Replace 0 volume with 1 volume
+        stock[:,-1] += (stock[:,-1] == 0)
         
         for i in range(100):
             index = random.randint(0, stock.shape[0] - (WINDOW_SIZE+1))
@@ -107,7 +117,10 @@ for filepath in tqdm(valid2):
         stock = stock[(VALID_START <= stock[:,0]) & (stock[:,0] < TEST_START)]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
+        
+        # Replace 0 volume with 1 volume
+        stock[:,-1] += (stock[:,-1] == 0)
         
         for i in range(100):
             index = random.randint(0, stock.shape[0] - (WINDOW_SIZE+1))
@@ -123,7 +136,10 @@ for filepath in tqdm(test):
         stock = stock[TEST_START <= stock[:,0]]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
+        
+        # Replace 0 volume with 1 volume
+        stock[:,-1] += (stock[:,-1] == 0)
         
         for i in range(100):
             index = random.randint(0, stock.shape[0] - (WINDOW_SIZE+1))
@@ -139,14 +155,23 @@ for filepath in tqdm(test2):
         stock = stock[TEST_START <= stock[:,0]]
         
         # Remove additional features
-        stock = np.concatenate([stock[:,1:5], stock[:,6:7]], axis=1).astype(float) 
+        stock = np.concatenate([stock[:,1:4], stock[:,5:7]], axis=1).astype(float) 
+        
+        # Replace 0 volume with 1 volume
+        stock[:,-1] += (stock[:,-1] == 0)
         
         for i in range(100):
             index = random.randint(0, stock.shape[0] - (WINDOW_SIZE+1))
             test2_array = np.concatenate([test2_array, np.expand_dims(stock[index:index+WINDOW_SIZE+1,:], 0)], 0)
+            
+print(f"valid:  {valid_array.shape}")
+print(f"valid2: {valid2_array.shape}")
+print(f"test:   {test_array.shape}")
+print(f"test2:  {test2_array.shape}")
 
-np.save("./valid_data", valid_array)
-np.save("./valid2_data", valid2_array)
-np.save("./test_data", test_array)
-np.save("./test2_data", test2_array)
+if input("Save arrays (y/n)? ") == "y":
+    np.save("./valid_data", valid_array)
+    np.save("./valid2_data", valid2_array)
+    np.save("./test_data", test_array)
+    np.save("./test2_data", test2_array)
     

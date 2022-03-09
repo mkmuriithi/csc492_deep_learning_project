@@ -72,9 +72,9 @@ def batch_normalization(batch_x, batch_t):
 
     """
     
-    # Normalize price-based features (% of previous day)
-    batch_t = batch_t / batch_x[:,-1,3:4]
-    #batch_x[:,:,:-1] = batch_x[:,:,:-1] / torch.concat([batch_x[:,0:1,:-1], batch_x[:,:-1,:-1]], dim=1)
+    # Normalize price-based features (% of first day)
+    batch_t /= batch_x[:,0,3:4]
+    batch_x[:,:,:-1] /= batch_x[:,0:1,:-1] 
     
     # Normalize volume
     #batch_t[:,-1] = batch_t[:,-1] / torch.max(batch_x[:,:,-1], axis=1)[0]
@@ -153,7 +153,7 @@ def train_model(model, train_loader=train_loader, valid_loader=valid_loader,
         train_losses.append(train_loss)
         valid_losses.append(valid_loss)
         valid2_losses.append(valid2_loss)
-        print(f"Epoch {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
+        print(f"Iteration {i+1} | Train Loss {train_loss:.4f} | Valid Loss {valid_loss:.4f} | Valid2 Loss {valid2_loss:.4f}")
         
     return train_losses, valid_losses, valid2_losses
    
