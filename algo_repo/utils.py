@@ -43,7 +43,7 @@ def get_list_of_tickers():
     return tickers_list
 
 
-#yfinance will act up and misbehave when we try to download, so try to circumvent this
+# yfinance will act up and misbehave when we try to download, so try to circumvent this
 def get_master_dataset(tickers_list=[], timestart="2007-01-01", timeend="2021-12-31"):
     """
         In order to iterate through the master datasetusing tickers in the dataset, please do df.group_by(level=0)
@@ -66,15 +66,32 @@ def get_master_dataset(tickers_list=[], timestart="2007-01-01", timeend="2021-12
 
 def get_historic_data(symbol):
     ticker = symbol
-    iex_api_key = 'Tsk_30a2677082d54c7b8697675d84baf94b'
-    api_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max?token={iex_api_key}'
-    df = requests.get(api_url).json()
+    params = {'token': 'pk_ea807dc493764e34917c4d18922a874a'}
+    sandbox_param = {"token": 'Tsk_30a2677082d54c7b8697675d84baf94b'}
+    #sandapi_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max?token={iex_api_key}'
+    api_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max'
+    df = requests.get(api_url, params=sandbox_param).json()
+    print("new shit is working")
 
     date = []
-    open = []
-    high = []
-    low = []
-    close = []
+    open = []   #split adjusted prices
+    high = []   #split adjusted prices
+    low = []    #split adjusted prices
+    close = []  #split adjsuted prices
+    volume = []  #spit adjusted volume
+    change = []   #change from previous trading day
+    changePercent = []  #change percent from previous trading day
+    uOpen = []  #unadjusted price
+    uClose = []  #unadjusted price
+    uHigh = []   #unadjusted price
+    uLow = []    #unadjusted price
+    uVolume = []  #unadjusted volume
+    fullOpen = [] #fully adjusted price
+    fullClose = [] #fully adjusted price
+    fullHigh = []  #fully adjusted price
+    fullLow = []   #fully adjusted price
+    fullVolume = [] #fully adjusted volume
+
 
     for i in range(len(df)):
         date.append(df[i]['date'])
@@ -82,18 +99,45 @@ def get_historic_data(symbol):
         high.append(df[i]['high'])
         low.append(df[i]['low'])
         close.append(df[i]['close'])
-
+        volume.append(df[i]["volume"])
+        change.append(df[i]["change"])
+        changePercent.append(df[i]["changePercent"])
+        uOpen.append(df[i]['uOpen'])
+        uClose.append(df[i]['uClose'])
+        uHigh.append(df[i]['uHigh'])
+        uLow.append(df[i]['uLow'])
+        uVolume.append(df[i]['uVolume'])
+        fullOpen.append(df[i]['fOpen'])
+        fullClose.append(df[i]['fClose'])
+        fullHigh.append(df[i]['fHigh'])
+        fullLow.append(df[i]['fLow'])
+        fullVolume.append(df[i]["fVolume"])
     date_df = pd.DataFrame(date).rename(columns={0: 'date'})
-    open_df = pd.DataFrame(open).rename(columns={0: 'open'})
     open_df = pd.DataFrame(open).rename(columns={0: 'open'})
     high_df = pd.DataFrame(high).rename(columns={0: 'high'})
     low_df = pd.DataFrame(low).rename(columns={0: 'low'})
     close_df = pd.DataFrame(close).rename(columns={0: 'close'})
+    volume_df = pd.DataFrame(volume).rename(columns={0: 'volume'})
+    change_df = pd.DataFrame(change).rename(columns={0: 'change'})
+    changePercent_df = pd.DataFrame(changePercent).rename(columns={0: 'changePercent'})
+    uOpen_df = pd.DataFrame(uOpen).rename(columns={0: 'uOpen'})
+    uClose_df = pd.DataFrame(uClose).rename(columns={0: "uClose"})
+    uHigh_df = pd.DataFrame(uHigh).rename(columns={0: "uHigh"})
+    uLow_df = pd.DataFrame(uLow).rename(columns={0: "uLow"})
+    uVolume_df = pd.DataFrame(uVolume).rename(columns={0:"uVolume"})
+    fullOpen_df = pd.DataFrame(fullOpen).rename(columns={0: "fullOpen"})
+    fullClose_df = pd.DataFrame(fullClose).rename(columns={0: "fullClose"})
+    fullHigh_df = pd.DataFrame(fullHigh).rename(columns={0: "fullHigh"})
+    fullLow_df = pd.DataFrame(fullLow).rename(columns={0: "fullLow"})
+    fullVolume_df = pd.DataFrame(fullVolume).rename(columns={0: "fullVolume"})
 
-    frames = [date_df, open_df, high_df, low_df, close_df]
+    frames = [date_df, open_df, high_df, low_df, close_df, volume_df, change_df, changePercent_df, uOpen_df,
+              uClose_df, uHigh_df, uLow_df, uVolume_df, fullOpen_df, fullClose_df, fullHigh_df, fullLow_df,
+              fullVolume_df]
+
     df = pd.concat(frames, axis=1, join='inner')
     df = df.set_index('date')
-
+    '''
     df['open'].plot()
     plt.title('{} Historical Prices'.format(ticker), fontsize=18)
     plt.xlabel('Date', fontsize=14)
@@ -101,5 +145,6 @@ def get_historic_data(symbol):
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.show()
-
+    '''
+    print("good")
     return df
