@@ -57,5 +57,14 @@ class ValidTestLoader:
 class SampleLoader:
     
     def load_data(self):
-        pass
+        data = np.zeros((1000, 31, 5))
+        x = np.random.rand(1000, 5)
+        v = np.random.rand(1000, 5)
+        for i in range(data.shape[1]):
+            data[:,i,:] = x
+            x += v
+        x = data[:,:-1,:]
+        t = np.sum(data[:,-1,:], axis=1, keepdims=True)
+        return x, t
+            
     
