@@ -12,7 +12,7 @@ from torchvision import datasets
 from torchvision.transforms import ToTensor
 pd.set_option('display.max_columns', None)
 
-class CustomStockDataset(Dataset):
+class CustomStockDataset(TimeSeriesDataset):
 
     def __init__(self, dataset, forecast_window=1, path=''):
         self.path = path
