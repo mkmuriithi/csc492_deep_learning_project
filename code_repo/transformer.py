@@ -1,13 +1,8 @@
-import torch, torch.nn as nn
-import math
-from typing import Tuple
-
 import torch
 from torch import nn, Tensor
-import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
-from torch.utils.data import dataset
-
+import math
+from hyper_param import *
 
 def generate_square_subsequent_mask(sz: int) -> Tensor:
     """Generates an upper-triangular matrix of -inf, with zeros on diag."""

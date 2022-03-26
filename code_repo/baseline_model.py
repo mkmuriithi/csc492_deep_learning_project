@@ -20,8 +20,6 @@ valid2_loader = ValidTestLoader(VALID2_PATH)
 test_loader = ValidTestLoader(TEST_PATH)
 test2_loader = ValidTestLoader(TEST2_PATH)
 
-sample_loader = SampleLoader()
-
 random.seed(time.time())
 
 def batch_normalization(batch_x, batch_t):

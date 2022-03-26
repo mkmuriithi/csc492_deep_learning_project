@@ -1,161 +1,72 @@
-from torch import nn
-from torch.nn import Transformer
-
-
 import torch
-import torch.nn as nn
-import torch.nn.functional as f
+from torch import nn, Tensor
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
+import math
+from hyper_param import *
 
+def generate_square_subsequent_mask(sz: int) -> Tensor:
+    """Generates an upper-triangular matrix of -inf, with zeros on diag."""
+    return torch.triu(torch.ones(sz, sz) * float('-inf'), diagonal=1)
 
-def scaled_dot_product_attention(query, key, value):
-    '''
-    Computes the local fields and the attention of the inputs as described in Vaswani et. al.
-    and then scale it for a total sum of 1
-    INPUT: query, key, value - input data of size (batch_size, seq_length, num_features)
-    '''
+class PositionalEncoding(nn.Module):
 
-    temp = query.bmm(key.transpose(1, 2))
-    scale = query.size(-1) ** 0.5
-    softmax = f.softmax(temp / scale, dim=-1)
-    attention = softmax.bmm(value)
-    return attention
-
-
-class MultiHeadAttention(nn.Module):
-    '''
-    Computes the multihead head consisting of a feedforward layer for each input value
-    where the attention for all of these are computed for each head and then concatenated and projected
-    as described in Vaswani et. al.
-    INPUT: dimensions of the three matrices (where the key and query matrix has the same dimensions) and the nr of heads
-    OUTPUT: the projected output of the multihead attention
-    '''
-
-    def __init__(self, num_heads, input_dim, key_dim, value_dim):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
-        self.query = nn.Linear(input_dim, key_dim)
-        self.key = nn.Linear(input_dim, key_dim)
-        self.value = nn.Linear(input_dim, value_dim)
-        self.num_heads = num_heads
+        self.dropout = nn.Dropout(p=dropout)
 
-        self.linear = nn.Linear(num_heads * value_dim, input_dim)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(1, max_len, d_model)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
 
-    def forward(self, query, key, value):
-        multiheads_out = [
-            scaled_dot_product_attention(self.query(query), self.key(key), self.value(value)) for _ in
-            range(self.num_heads)
-        ]
-        out = self.linear(torch.cat(multiheads_out, dim=-1))
-        return out
-
-
-def positioning_encoding(seq_length, model_dim):
-    '''
-    Computes the positional encoding for the current state of the elements in the input sequence as
-    there is no recurrence or convolution. Using the same encoding with sinusosoidal functions as in Vaswani et. al.
-    as the motivations of linearly dependency of the relative positions and the ability to extrapolate to sequence lengths
-    longer than encountered in training holds strong.
-    Code copied from Frank Odom
-    INPUT: length of the input sequence and the dimension of the model
-    OUTPUT: Encoded relative positions of the data points in the input sequence
-    '''
-    position = torch.arange(seq_length, dtype=torch.float).reshape(1, -1, 1)
-    frequencies = 1e-4 ** (2 * (torch.arange(model_dim, dtype=torch.float) // 2) / model_dim).reshape(1, 1, -1)
-    pos_enc = position * frequencies
-    pos_enc[:, ::2] = torch.cos(pos_enc[:, ::2])
-    pos_enc[:, 1::2] = torch.sin(pos_enc[:, 1::2])
-    return pos_enc
-
-
-def forward(input_dim=512, forward_dim=2048):
-    '''
-    Forward class for the feed-forward layer that is following the multihead
-    attention layers
-    INPUT: input dimension and the layer size of the forward layer
-    OUTPUT: feed-forward layer (nn.Module)
-    '''
-    forward_layer = nn.Sequential(
-        nn.Linear(input_dim, forward_dim),
-        nn.ReLU(),
-        nn.Linear(forward_dim, input_dim)
-    )
-    return forward_layer
-
-
-class ResidualConnection(nn.Module):
-    '''
-    Class for the residual connections for the encoder and the decoder, used for each multihead attention layer
-    and for each feed-forward layer
-    INPUT: type of layer, dimension for the layer normalization and dropout probability factor
-    OUTPUT: Normalized and processed tensors added to the input tensors
-    '''
-
-    def __init__(self, layer, dimension, dropout=0.2):
-        super().__init__()
-        self.layer = layer
-        self.norm = nn.LayerNorm(dimension)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, *X):
-        return self.norm(X[-1] + self.dropout(self.layer(*X)))
-
-
-class Encoder(nn.Module):
-    '''
-    The encoder of the transformer model, first computes the relative positions of the inputs, then feeds it into
-    the multihead attention followed by the feed-forward layer, both with normalized residual connections
-    '''
-
-    def __init__(self, n_layers=6, model_dim=512, num_heads=8, forward_dim=2048, dropout=0.2):
-        super().__init__()
-
-        self.n_layers = n_layers
-        key_dim = value_dim = model_dim // num_heads
-
-        # Multihead attention layer with normalized residual connections and dropout
-        self.multihead_attention = ResidualConnection(
-            MultiHeadAttention(num_heads, model_dim, key_dim, value_dim),
-            dimension=model_dim,
-            dropout=dropout
-        )
-        # Feed-forward layer with normalized residual connections and dropout
-        self.feed_forward = ResidualConnection(
-            forward(model_dim, forward_dim),
-            dimension=model_dim,
-            dropout=dropout
-        )
-
-    def forward(self, X):
-        seq_length, dimension = X.size(1), X.size(2)
-        out = X
-        # Computes the positional encodings
-        out += positioning_encoding(seq_length, dimension)
-        # Feeds the input to the multihead attention layer followed by the feed-forward
-        # layer for 'n_layers' many layers
-        for _ in range(self.n_layers):
-            att_out = self.multihead_attention(out, out, out)
-            out = self.feed_forward(att_out)
-        return out
-
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x: Tensor, shape [batch_size, seq_len, embedding_dim]
+        """
+        x = x + self.pe[:,:x.size(1)]
+        return self.dropout(x)
 
 class TransformerModel(nn.Module):
-    '''
-    Transformer model that combines the encoder and the decoder
-    "model_dim" must be the same size as "num_features" in the input data (i.e size last dimension),
-    otherwise freely tunable parameters
-    '''
-
-    def __init__(self, n_layers=6, model_dim=512, output_dim=512,
-                 num_heads=6, forward_dim=2048, dropout=0.2):
+    def __init__(self, d_model: int, nhead: int, d_hid: int,
+                 nlayers: int, dropout: float = 0.5):
         super().__init__()
-        self.encoder = Encoder(n_layers, model_dim, num_heads, forward_dim, dropout)
-        self.flatten = nn.Flatten()
-        self.linear = nn.Linear(6, output_dim)
-        self.relu = nn.ReLU(inplace=True)
+        self.model_type = 'Transformer'
+        self.embedding = nn.Linear(5, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        encoder_layers = TransformerEncoderLayer(d_model, nhead, d_hid, dropout, batch_first=True)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
+        self.d_model = d_model
+        self.decoder = nn.Linear(d_model * 2, 1)
 
-    def forward(self, X):
-        enc_out = self.encoder(X)
-        #flat = self.flatten(enc_out)
-        #out = self.relu(self.linear(enc_out[:, -1,
-        # :]))
-        out = self.relu(self.linear(enc_out[:, -1, :]))
-        return out
+        self.init_weights()
+
+    def init_weights(self) -> None:
+        initrange = 0.1
+        self.decoder.bias.data.zero_()
+        self.decoder.weight.data.uniform_(-initrange, initrange)
+
+    def forward(self, src: Tensor, src_mask: Tensor) -> Tensor:
+        """
+        Args:
+            src: Tensor, shape [batch_size, seq_len]
+            src_mask: Tensor, shape [seq_len, seq_len]
+
+        Returns:
+            output Tensor of shape [batch_size, seq_len, ntoken]
+        """
+        src = self.embedding(src)
+        src = self.pos_encoder(src)
+        output = self.transformer_encoder(src, src_mask)
+        output = torch.concat([torch.max(output, dim=1)[0], torch.mean(output, dim=1)], dim=1)
+        output = self.decoder(output)
+        return output
+
+emsize = 16  # embedding dimension
+d_hid = 2  # dimension of the feedforward network model in nn.TransformerEncoder
+nlayers = 2  # number of nn.TransformerEncoderLayer in nn.TransformerEncoder
+nhead = 16  # number of heads in nn.MultiheadAttention
+dropout = 0  # dropout probability
+model = TransformerModel(emsize, nhead, d_hid, nlayers, dropout)
