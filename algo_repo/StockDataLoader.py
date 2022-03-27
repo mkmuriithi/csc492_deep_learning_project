@@ -48,5 +48,5 @@ class StockDataset(Dataset):
         # return sequences
         # return
         # ave to return the y corresponding to the last element in the sequence NOT first element
-        return Tensor(self.x[idx:idx+self.seq_length].values), Tensor(self.y.iloc[[idx + self.seq_length]].values)
+        return Tensor(self.x[idx:idx+self.seq_length].values), Tensor(self.y.iloc[idx + self.seq_length].values)
 

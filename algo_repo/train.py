@@ -82,7 +82,7 @@ class transf_params:
     lr = 0.01
 
 
-def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momentum=0.9, num_epochs=1,
+def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momentum=0.9, num_epochs=10,
           weight_decay=0.0):
     # create training, valid and test sets of StockDataset type data
     train_custom, valid_custom, test_custom = split_data(data, window=30, minmax=True)
@@ -125,30 +125,29 @@ def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momen
 
             # predict validation
 
+            val_loss = 0
             with torch.no_grad():
                 for X_val, y_val in iter(val_dataloader):
                     mask = torch.zeros(X_val.shape[1], X_val.shape[1])
-
-                    '''
                     if torch.cuda.is_available():
                         X_val = X_val.cuda()
                         y_val = y_val.cuda()
                         mask = mask.cuda()
                     model.eval() #annotate for test
                     val_out = model(X_val, mask)
-                    val_loss = criterion(val_out, y_val).item()
-                    val_losses.append(val_loss)
-                    '''
+                    val_loss += criterion(val_out, y_val).item()
+            val_losses.append(val_loss)
 
     print(f'Final Training Loss: {train_losses[-1]}')
-    # print(f'Final Val Accuracy {val_losses[-1]}')
+    print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title("Learning Loss")
     plt.plot(train_losses, label='Train')
-    # plt.plot(val_losses, label='Validation')
+    plt.plot(val_losses, label='Validation')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
+    plt.yscale("log")
     plt.show()
 
     return train_losses, val_losses
