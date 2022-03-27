@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import requests
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from StockDataLoader import StockDataset
+from sklearn.preprocessing import MinMaxScaler
 
 
 def get_list_of_tickers():
@@ -68,30 +71,29 @@ def get_historic_data(symbol):
     ticker = symbol
     params = {'token': 'pk_ea807dc493764e34917c4d18922a874a'}
     sandbox_param = {"token": 'Tsk_30a2677082d54c7b8697675d84baf94b'}
-    #sandapi_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max?token={iex_api_key}'
+    # sandapi_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max?token={iex_api_key}'
     api_url = f'https://sandbox.iexapis.com/stable/stock/{ticker}/chart/max'
     df = requests.get(api_url, params=sandbox_param).json()
     print("new shit is working")
 
     date = []
-    open = []   #split adjusted prices
-    high = []   #split adjusted prices
-    low = []    #split adjusted prices
-    close = []  #split adjsuted prices
-    volume = []  #spit adjusted volume
-    change = []   #change from previous trading day
-    changePercent = []  #change percent from previous trading day
-    uOpen = []  #unadjusted price
-    uClose = []  #unadjusted price
-    uHigh = []   #unadjusted price
-    uLow = []    #unadjusted price
-    uVolume = []  #unadjusted volume
-    fullOpen = [] #fully adjusted price
-    fullClose = [] #fully adjusted price
-    fullHigh = []  #fully adjusted price
-    fullLow = []   #fully adjusted price
-    fullVolume = [] #fully adjusted volume
-
+    open = []  # split adjusted prices
+    high = []  # split adjusted prices
+    low = []  # split adjusted prices
+    close = []  # split adjsuted prices
+    volume = []  # spit adjusted volume
+    change = []  # change from previous trading day
+    changePercent = []  # change percent from previous trading day
+    uOpen = []  # unadjusted price
+    uClose = []  # unadjusted price
+    uHigh = []  # unadjusted price
+    uLow = []  # unadjusted price
+    uVolume = []  # unadjusted volume
+    fullOpen = []  # fully adjusted price
+    fullClose = []  # fully adjusted price
+    fullHigh = []  # fully adjusted price
+    fullLow = []  # fully adjusted price
+    fullVolume = []  # fully adjusted volume
 
     for i in range(len(df)):
         date.append(df[i]['date'])
@@ -124,7 +126,7 @@ def get_historic_data(symbol):
     uClose_df = pd.DataFrame(uClose).rename(columns={0: "uClose"})
     uHigh_df = pd.DataFrame(uHigh).rename(columns={0: "uHigh"})
     uLow_df = pd.DataFrame(uLow).rename(columns={0: "uLow"})
-    uVolume_df = pd.DataFrame(uVolume).rename(columns={0:"uVolume"})
+    uVolume_df = pd.DataFrame(uVolume).rename(columns={0: "uVolume"})
     fullOpen_df = pd.DataFrame(fullOpen).rename(columns={0: "fullOpen"})
     fullClose_df = pd.DataFrame(fullClose).rename(columns={0: "fullClose"})
     fullHigh_df = pd.DataFrame(fullHigh).rename(columns={0: "fullHigh"})
@@ -148,3 +150,42 @@ def get_historic_data(symbol):
     '''
     print("good")
     return df
+
+
+def split_data(data, window=30, minmax=True):
+    data.dropna(inplace=True)
+    X = data.drop(["Target"], axis=1)
+    y = data[["Target"]]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42, shuffle=False)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42, shuffle=False)
+
+    if minmax:
+        columns = X_train.columns
+        index = X_train.index
+        X_train = pd.DataFrame(MinMaxScaler().fit_transform(X_train), columns=columns, index=index)
+
+        columns = X_val.columns
+        index = X_val.index
+        X_val = pd.DataFrame(MinMaxScaler().fit_transform(X_val), columns=columns, index=index)
+
+        columns = X_test.columns
+        index = X_test.index
+        X_test = pd.DataFrame(MinMaxScaler().fit_transform(X_test), columns=columns, index=index)
+
+        columns = y_train.columns
+        index = y_train.index
+        y_train = pd.DataFrame(MinMaxScaler().fit_transform(y_train), columns=columns, index=index)
+
+        columns = y_val.columns
+        index = y_val.index
+        y_val = pd.DataFrame(MinMaxScaler().fit_transform(y_val), columns=columns, index=index)
+
+        columns = y_test.columns
+        index = y_test.index
+        y_test = pd.DataFrame(MinMaxScaler().fit_transform(y_test), columns=columns, index=index)
+
+    dataset_train = StockDataset(X_train, y_train, window)
+    dataset_val = StockDataset(X_val, y_val, window)
+    dataset_test = StockDataset(X_test, y_test, window)
+
+    return dataset_train, dataset_val, dataset_test
