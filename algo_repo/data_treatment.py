@@ -5,8 +5,10 @@ from sklearn.preprocessing import MinMaxScaler
 
 def get_treated(data, to_daily_returns=True):
     # get percentage change first
+    temp_holder = data['Date']
     if to_daily_returns:
         data = _get_daily_returns(data)
+    data['Date'] = temp_holder
     data.dropna(inplace=True)
     return data
 

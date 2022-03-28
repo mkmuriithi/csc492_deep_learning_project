@@ -82,23 +82,24 @@ class transf_params:
     lr = 0.01
 
 
-def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momentum=0.9, num_epochs=10,
+def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-5, momentum=0.9, num_epochs=10,
           weight_decay=0.0):
     # create training, valid and test sets of StockDataset type data
-    train_custom, valid_custom, test_custom = split_data(data, window=30, minmax=True)
+    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
     # normalize data
 
     # create loaders
     train_dataloader = DataLoader(train_custom, batch_size=16,
-                                  shuffle=False)  # returns the X and associated y prediction
-    val_dataloader = DataLoader(valid_custom, batch_size=16, shuffle=False)  # does same
+                                  shuffle=True)  # returns the X and associated y prediction
+    val_dataloader = DataLoader(valid_custom, batch_size=16, shuffle=True)  # does same
     optimizer = optim.Adam(model.parameters(),
-                           lr=learning_rate,
-                           weight_decay=weight_decay)
+                          lr=learning_rate,
+                          weight_decay=weight_decay)
 
     # track learning curve
     mse = nn.MSELoss(reduction="mean")
-    criterion = lambda y, t: torch.sqrt(mse(y, t))
+    # criterion = lambda y, t: torch.sqrt(mse(y, t))
+    criterion = torch.nn.MSELoss(reduction='mean')
     iters, train_losses, val_losses = [], [], []
     # train
     for epoch in range(0, num_epochs):
@@ -114,6 +115,7 @@ def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momen
             model.train()  # annotate for train
             out = model(X, mask)
             loss = criterion(out, y)
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -126,6 +128,7 @@ def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momen
             # predict validation
 
             val_loss = 0
+            '''
             with torch.no_grad():
                 for X_val, y_val in iter(val_dataloader):
                     mask = torch.zeros(X_val.shape[1], X_val.shape[1])
@@ -137,13 +140,13 @@ def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-3, momen
                     val_out = model(X_val, mask)
                     val_loss += criterion(val_out, y_val).item()
             val_losses.append(val_loss)
-
+            '''
     print(f'Final Training Loss: {train_losses[-1]}')
-    print(f'Final Validation Loss {val_losses[-1]}')
+    # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title("Learning Loss")
     plt.plot(train_losses, label='Train')
-    plt.plot(val_losses, label='Validation')
+    # plt.plot(val_losses, label='Validation')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
