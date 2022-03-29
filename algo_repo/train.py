@@ -74,16 +74,16 @@ class TransformerModel(nn.Module):
 class transf_params:
     n_layers = 4
     num_heads = 8
-    input_dim = 6
-    model_dim = 512
+    input_dim = 10
+    model_dim = 512 #embed dim
     forward_dim = 2048
     dropout = 0
     n_epochs = 10
     lr = 0.01
 
 
-def train(model, data, optimizer='adam', batch_size=4, learning_rate=1e-5, momentum=0.9, num_epochs=10,
-          weight_decay=0.0):
+def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momentum=0.9, num_epochs=10,
+          weight_decay=0.5):
     # create training, valid and test sets of StockDataset type data
     train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
     # normalize data
@@ -163,14 +163,22 @@ if __name__ == '__main__':
     data = yf.download(tickers="AAPL", period='10y', interval='1d', groupby='ticker', auto_adjust='True')
     data.reset_index(inplace=True)
 
-    data.drop(columns=['Date'], inplace=True)
-    data.index = data.index.set_names(["Date"])
-    data.reset_index(inplace=True)  # to keep up with order
+    dayoftheweek = data['Date'].dt.dayofweek + 1
+    #dayoftheseries =[]
+    #for i in range (0, len(data)):
+    #    dayoftheseries.append(i + 1)
+
+
+    data['Date'] = pd.Series(dayoftheweek)
+
+    #data.index = data.index.set_names(["Date"])
+    #data.reset_index(inplace=True)  # to keep up with order
     data['Target'] = data["Close"].shift(-1)
     # data["Date"] = data["Date"].apply(lambda x: x.value / 10 ** 9)
-
-    data = get_treated(data)
-
+    #add features
+    data = add_features(data)
+    data = get_treated(data, to_daily_returns=True, features_to_exclude=['Date'])
+    #data.drop(columns=['Date'], inplace=True)
     # dataset_train = StockDataset(X_train, y_train, 14)
     # dataset_val = StockDataset(X_val, y_val, 14)
     # dataset_test = StockDataset(X_test, y_test, 14)
