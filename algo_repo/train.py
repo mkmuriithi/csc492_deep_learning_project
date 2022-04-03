@@ -101,11 +101,11 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
     mse = nn.L1Loss(reduction="mean")
     # criterion = lambda y, t: torch.sqrt(mse(y, t))
     criterion = torch.nn.MSELoss(reduction='mean')
-    iters, train_losses, baseline_losses =  [], [], []
+    iters, train_losses, val_losses, baseline_losses =  [], [], [], []
     # train
     for epoch in range(0, num_epochs):
         print(f'Epoch {epoch} training beginning...')
-        for n, data in enumerate(iter(train_dataloader)):
+        for n, data in enumerate(train_dataloader):
             X, y, X_baseline, y_baseline = data
             mask = torch.zeros(X.shape[1], X.shape[1])
             if torch.cuda.is_available():
@@ -120,16 +120,35 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-
+            train_loss = loss.item() # save training loss
+            
+            #annotate for evaluation
+            model.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for data in val_dataloader:
+                    X, y, X_baseline, y_baseline = data
+                    mask = torch.zeros(X.shape[1], X.shape[1])
+                    if torch.cuda.is_available():
+                        X = X.cuda()
+                        y = y.cuda()
+                        mask = mask.cuda()
+                        
+                    out = model(X, mask)
+                    loss = criterion(out, y)
+                    val_loss += loss.item() # save validation loss
+                val_loss /= len(val_dataloader)
+                    
             #save current training info
             iters.append(n)
-            train_losses.append(float(loss)/batch_size) #avearge loss
+            train_losses.append(train_loss/batch_size) #avearge loss
+            val_losses.append(val_loss/batch_size)
             baseline_losses.append(get_last_price_close_rmse(y_baseline))
             #train_acc.append(get_accuracy(model, train_custom, train=True))
             #val_acc.append`(get_accuracy(model, valid_custom, train=False))
             #train_losses.append(loss.item())  # average loss
             if (n % 20 == 0):
-                print(f'Iteration: {n}, Loss: {loss.item()}')
+                print(f'Iteration: {n}, Train Loss: {train_loss}, Val Loss: {val_loss}')
 
             # predict validation
     print(f'Final Training Loss: {train_losses[-1]}')
@@ -137,8 +156,8 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
     # graph loss
     plt.title("Learning Loss")
     plt.plot(train_losses, label='Train')
+    plt.plot(val_losses, label='Validation')
     plt.plot(baseline_losses, label='baseline')
-    # plt.plot(val_losses, label='Validation')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
@@ -146,7 +165,7 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
     plt.show()
 
 
-    return train_losses
+    return train_losses, val_losses, baseline_losses
 
 
 def get_last_price_close_rmse(y):
@@ -204,4 +223,4 @@ if __name__ == '__main__':
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
         model = model.cuda()
-    train_losses = train(model, data)
+    train_losses, val_losses, baseline_losses = train(model, data)
