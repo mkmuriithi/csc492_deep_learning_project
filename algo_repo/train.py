@@ -10,6 +10,7 @@ from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
 from utils import *
 from data_treatment import *
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 
 
 class PositionalEncoding(nn.Module):
@@ -97,15 +98,15 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
                           weight_decay=weight_decay)
 
     # track learning curve
-    mse = nn.MSELoss(reduction="mean")
+    mse = nn.L1Loss(reduction="mean")
     # criterion = lambda y, t: torch.sqrt(mse(y, t))
     criterion = torch.nn.MSELoss(reduction='mean')
-    iters, train_losses, val_losses = [], [], []
+    iters, train_losses, baseline_losses =  [], [], []
     # train
     for epoch in range(0, num_epochs):
         print(f'Epoch {epoch} training beginning...')
         for n, data in enumerate(iter(train_dataloader)):
-            X, y = data
+            X, y, X_baseline, y_baseline = data
             mask = torch.zeros(X.shape[1], X.shape[1])
             if torch.cuda.is_available():
                 X = X.cuda()
@@ -120,32 +121,23 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
             optimizer.step()
             optimizer.zero_grad()
 
+            #save current training info
             iters.append(n)
-            train_losses.append(loss.item())  # average loss
+            train_losses.append(float(loss)/batch_size) #avearge loss
+            baseline_losses.append(get_last_price_close_rmse(y_baseline))
+            #train_acc.append(get_accuracy(model, train_custom, train=True))
+            #val_acc.append`(get_accuracy(model, valid_custom, train=False))
+            #train_losses.append(loss.item())  # average loss
             if (n % 20 == 0):
                 print(f'Iteration: {n}, Loss: {loss.item()}')
 
             # predict validation
-
-            val_loss = 0
-            '''
-            with torch.no_grad():
-                for X_val, y_val in iter(val_dataloader):
-                    mask = torch.zeros(X_val.shape[1], X_val.shape[1])
-                    if torch.cuda.is_available():
-                        X_val = X_val.cuda()
-                        y_val = y_val.cuda()
-                        mask = mask.cuda()
-                    model.eval() #annotate for test
-                    val_out = model(X_val, mask)
-                    val_loss += criterion(val_out, y_val).item()
-            val_losses.append(val_loss)
-            '''
     print(f'Final Training Loss: {train_losses[-1]}')
     # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title("Learning Loss")
     plt.plot(train_losses, label='Train')
+    plt.plot(baseline_losses, label='baseline')
     # plt.plot(val_losses, label='Validation')
     plt.legend()
     plt.xlabel("Iterations")
@@ -153,8 +145,31 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
     plt.yscale("log")
     plt.show()
 
-    return train_losses, val_losses
 
+    return train_losses
+
+
+def get_last_price_close_rmse(y):
+    #note that y is a batch of ys. Need to iterate through the batches
+
+    avg_mse = 0
+    num_batches = 0
+
+    for batch in y:
+        #print(batch.reshape(-1))
+        new_batch = batch.reshape(-1)
+        num_batches += 1
+        df_y = pd.Series(new_batch)
+        df_y.name = "Close"
+        df_pred = df_y.shift(1)
+        df_pred.name = "Predicted"
+        new_df = df_y.to_frame().join(df_pred)
+        new_df.columns = ["Real Closing Price", "Predicted Closing"]
+        new_df.dropna(inplace=True)
+        mse = mean_squared_error(new_df["Real Closing Price"], new_df["Predicted Closing"])
+        avg_mse += mse
+    avg_mse = avg_mse / num_batches
+    return avg_mse
 
 if __name__ == '__main__':
 
@@ -189,4 +204,4 @@ if __name__ == '__main__':
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
         model = model.cuda()
-    train_losses, val_losses = train(model, data)
+    train_losses = train(model, data)
