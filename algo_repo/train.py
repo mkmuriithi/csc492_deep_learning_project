@@ -83,7 +83,7 @@ class transf_params:
     lr = 0.01
 
 
-def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momentum=0.9, num_epochs=10,
+def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-8, momentum=0.9, num_epochs=25,
           weight_decay=0.5):
     # create training, valid and test sets of StockDataset type data
     train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
@@ -124,7 +124,7 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
             
             #annotate for evaluation
             model.eval()
-            val_loss = 0
+            val_loss = []
             with torch.no_grad():
                 for data in val_dataloader:
                     X, y, X_baseline, y_baseline = data
@@ -136,14 +136,14 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
                         
                     out = model(X, mask)
                     loss = criterion(out, y)
-                    val_loss += loss.item() # save validation loss
-                val_loss /= len(val_dataloader)
+                    val_loss.append(loss.item()) # save validation loss
+                val_loss = np.mean(val_loss) # mean reduction
                     
             #save current training info
             iters.append(n)
             train_losses.append(train_loss/batch_size) #avearge loss
             val_losses.append(val_loss/batch_size)
-            baseline_losses.append(get_last_price_close_rmse(y_baseline))
+            baseline_losses.append(get_last_price_close_mse(y_baseline))
             #train_acc.append(get_accuracy(model, train_custom, train=True))
             #val_acc.append`(get_accuracy(model, valid_custom, train=False))
             #train_losses.append(loss.item())  # average loss
@@ -168,7 +168,7 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-2, momen
     return train_losses, val_losses, baseline_losses
 
 
-def get_last_price_close_rmse(y):
+def get_last_price_close_mse(y):
     #note that y is a batch of ys. Need to iterate through the batches
 
     avg_mse = 0
@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     import yfinance as yf
 
-    data = yf.download(tickers="AAPL", period='10y', interval='1d', groupby='ticker', auto_adjust='True')
+    data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
     data.reset_index(inplace=True)
 
     dayoftheweek = data['Date'].dt.dayofweek + 1
