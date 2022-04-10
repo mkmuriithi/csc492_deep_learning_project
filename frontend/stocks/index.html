@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="container text-center">
+    <h1>Enter Stock Ticker here</h1>
+    <form actions="/stocks" method="post">
+        {% csrf_token %} 
+        {{ form }}
+        <input type="submit" value="Submit">
+    </form>
+</div>
+{% endblock %}

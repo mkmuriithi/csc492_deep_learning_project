@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ ticker }}{% endblock %}
+{% block content %}
+<div class="container text-center">
+    <h1>{{ ticker_info.shortName }} ({{ ticker|upper }})</h1>
+    {{ ticker_30_days_data_html|safe }}
+    <p>Description: {{ticker_info.longBusinessSummary}}</p>
+    <script src="" async defer></script>
+</div>
+{% endblock %}
