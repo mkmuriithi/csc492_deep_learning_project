@@ -11,7 +11,15 @@ from sklearn.model_selection import train_test_split
 from utils import *
 from data_treatment import *
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
+from datetime import datetime
+import logging
+import random
+import os
 
+#setting seed for torch random number generator, for reproducability
+torch.manual_seed(42)
+np.random.seed(42)
+random.seed(42)
 
 class PositionalEncoding(nn.Module):
 
@@ -82,21 +90,30 @@ class transf_params:
     n_epochs = 10
     lr = 0.01
 
-
 def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_epochs=10,
           weight_decay=0.1):
     # create training, valid and test sets of StockDataset type data
     train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
     # normalize data
 
+    #preserving reproducability in dataloader with
+    g = torch.Generator()
+    g.manual_seed(42)
     # create loaders
     train_dataloader = DataLoader(train_custom, batch_size=16,
-                                  shuffle=True)  # returns the X and associated y prediction
-    val_dataloader = DataLoader(valid_custom, batch_size=16, shuffle=True)  # does same
+                                  shuffle=True,
+                                  worker_init_fn=seed_worker,
+                                  generator=g)  # returns the X and associated y prediction
+    val_dataloader = DataLoader(valid_custom, batch_size=16, shuffle=True,
+                                worker_init_fn=seed_worker,
+                                generator=g)  # does same
+
     optimizer = optim.Adam(model.parameters(),
                           lr=learning_rate,
                           weight_decay=weight_decay)
 
+    print(f'The length of the train dataloader is {len(train_dataloader)}\n'
+          f'The length of the validation dataloader is {len(val_dataloader)}')
     # track learning curve
     mse = nn.L1Loss(reduction="mean")
     # criterion = lambda y, t: torch.sqrt(mse(y, t))
@@ -170,7 +187,9 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_e
             n += 1
 
             # predict validation
-    print(f'Final Training Loss: {train_losses[-1]}')
+
+    final_loss = train_losses[1]
+    print(f'Final Training Loss: {final_loss}')
     # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title(f"Training Curve (lr={learning_rate}, wd={weight_decay})")
@@ -181,8 +200,16 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_e
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.yscale("log")
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H:%M:%S")
+    plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
 
+    final_training_loss = train_losses[-1]
+    final_validation_loss = val_losses[-1]
+    average_training_loss = np.mean(train_losses)
+    log_datetime = datetime.now().strftime("Date: %m/%d/%Y\nTime: %H:%M:$S")
+    logging.info(f'\n{log_datetime}\nFinal Train Loss: {final_training_loss}\nFinal Validation Loss: {final_validation_loss} \n '
+                 f'Average Train Loss: {average_training_loss}\n\n')
 
     return train_losses, val_losses, baseline_losses, iters
 
@@ -211,10 +238,18 @@ def get_last_price_close_mse(y):
     
 def save_params(model):
     torch.save(model.state_dict, "model.pt")
+
     
 def load_params():
     return torch.load("model.pt")
-    
+def seed_worker(worker_id):
+    '''
+    Function used to preserve reproducability, as Dataloader reseeds workers
+    Inspired by https://pytorch.org/docs/stable/notes/randomness.html
+    '''
+    np.random.seed(42)
+    random.seed(42)
+
 def plot_predictions(model, data):
     train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
     train_dataloader = DataLoader(train_custom, batch_size=1, shuffle=True)
@@ -282,10 +317,27 @@ def plot_predictions(model, data):
     plt.ylabel("Normalized Closing Price")
     plt.show()
 
+
+
+
 if __name__ == '__main__':
 
     import yfinance as yf
+    #check if directory for saving files is present
 
+
+    #configuring logger
+    logging.basicConfig(filename="training.log", filemode='a', format='%(levelname)s: %(message)s', level=logging.INFO)
+
+    try:
+        if not os.path.exists('figures'):
+            os.makedirs('figures')
+    except Exception as e:
+        print("An exception occured while trying to create path for figures to be stored in")
+
+
+
+    #get list of stocks to train on
     data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
     data.reset_index(inplace=True)
 
