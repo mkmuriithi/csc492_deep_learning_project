@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
 from utils import *
-from data_treatment import *
+from data_stuff import *
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from datetime import datetime
 import logging
@@ -201,14 +201,14 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_e
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.yscale("log")
-    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H:%M:%S")
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H:%M")
     plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
 
     final_training_loss = train_losses[-1]
     final_validation_loss = val_losses[-1]
     average_training_loss = np.mean(train_losses)
-    log_datetime = datetime.now().strftime("Date: %m/%d/%Y\nTime: %H:%M:$S")
+    log_datetime = datetime.now().strftime("Date: %m/%d/%Y\nTime: %H:%M")
     logging.info(f'\n{log_datetime}\nFinal Train Loss: {final_training_loss}\nFinal Validation Loss: {final_validation_loss} \n '
                  f'Average Train Loss: {average_training_loss}\n\n')
 
@@ -318,14 +318,23 @@ def plot_predictions(model, data):
     plt.ylabel("Normalized Closing Price")
     plt.show()
 
+def treat_single_stock(data):
+    data.reset_index(inplace=True)
+    dayoftheweek = data['Date'].dt.dayofweek + 1
+    data['Date'] = pd.Series(dayoftheweek)
+    data['Target'] = data["Close"].shift(-1)
+    data = add_features(data)
+    data = get_treated(data, to_daily_returns=True, features_to_exclude=['Date'])
+    return data
 
+def treat_multiple_stock(all_data):
+    #date is a feature
+    for stock_name in all_data.keys():
+        all_data[stock_name] = treat_single_stock(all_data[stock_name])
+    return all_data
 
 
 if __name__ == '__main__':
-
-    import yfinance as yf
-    #check if directory for saving files is present
-
 
     #configuring logger
     logging.basicConfig(filename="training.log", filemode='a', format='%(levelname)s: %(message)s', level=logging.INFO)
@@ -335,35 +344,20 @@ if __name__ == '__main__':
             os.makedirs('figures')
     except Exception as e:
         print("An exception occured while trying to create path for figures to be stored in")
-
+    try:
+        if not os.path.exists('model_pickles'):
+            os.makedirs('model_pickles')
+    except Exception as e:
+        print("An exception occured while trying to create path for model pickles to be stored in")
 
 
     #get list of stocks to train on
-    data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
-    data.reset_index(inplace=True)
-
-    dayoftheweek = data['Date'].dt.dayofweek + 1
-    #dayoftheseries =[]
-    #for i in range (0, len(data)):
-    #    dayoftheseries.append(i + 1)
+    #data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
+    data = get_dataset(single=False, subset=False)
+    #data = treat_single_stock(data)
+    data = treat_multiple_stock(data)
 
 
-    data['Date'] = pd.Series(dayoftheweek)
-
-    #data.index = data.index.set_names(["Date"])
-    #data.reset_index(inplace=True)  # to keep up with order
-    data['Target'] = data["Close"].shift(-1)
-    # data["Date"] = data["Date"].apply(lambda x: x.value / 10 ** 9)
-    #add features
-    data = add_features(data)
-    data = get_treated(data, to_daily_returns=True, features_to_exclude=['Date'])
-    #data.drop(columns=['Date'], inplace=True)
-    # dataset_train = StockDataset(X_train, y_train, 14)
-    # dataset_val = StockDataset(X_val, y_val, 14)
-    # dataset_test = StockDataset(X_test, y_test, 14)
-
-    # train_dataloader = DataLoader(dataset_train, batch_size=16, shuffle=False)
-    # val_dataloader = DataLoader(dataset_val, batch_size=16, shuffle=False)
 
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
@@ -371,12 +365,9 @@ if __name__ == '__main__':
     train_losses, val_losses, baseline_losses, iters = train(model, data)
     #pickle model for frontend
 
-    try:
-        if not os.path.exists('model_pickles'):
-            os.makedirs('model_pickles')
-    except Exception as e:
-        print("An exception occured while trying to create path for model pickles to be stored in")
-    model_name = "models/model_date_%m_%d_%Y_time_%H:%M.p"
+
+
+    model_name = "models_pickles/model_date_%m_%d_%Y_time_%H:%M.p"
     with open(model_name, 'wb') as model_save_location:
         pickle.dump(model, model_save_location)
         
