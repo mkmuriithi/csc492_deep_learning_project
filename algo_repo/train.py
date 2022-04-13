@@ -15,6 +15,7 @@ from datetime import datetime
 import logging
 import random
 import os
+import pickle
 
 #setting seed for torch random number generator, for reproducability
 torch.manual_seed(42)
@@ -368,4 +369,14 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         model = model.cuda()
     train_losses, val_losses, baseline_losses, iters = train(model, data)
+    #pickle model for frontend
+
+    try:
+        if not os.path.exists('model_pickles'):
+            os.makedirs('model_pickles')
+    except Exception as e:
+        print("An exception occured while trying to create path for model pickles to be stored in")
+    model_name = "models/model_date_%m_%d_%Y_time_%H:%M.p"
+    with open(model_name, 'wb') as model_save_location:
+        pickle.dump(model, model_save_location)
         
