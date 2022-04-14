@@ -82,3 +82,41 @@ def get_date_n_years_ago(n):
     years_ago = n
     n_years_ago = today - datetime.timedelta(days=(days_per_year * years_ago))
     return n_years_ago
+
+def split_data(data, window=30, minmax=True):
+    data.dropna(inplace=True)
+    X = data.drop(["Target"], axis=1)
+    y = data[["Target"]]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42, shuffle=False)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42, shuffle=False)
+
+    if minmax:
+        columns = X_train.columns
+        index = X_train.index
+        X_train = pd.DataFrame(MinMaxScaler().fit_transform(X_train), columns=columns, index=index)
+
+        columns = X_val.columns
+        index = X_val.index
+        X_val = pd.DataFrame(MinMaxScaler().fit_transform(X_val), columns=columns, index=index)
+
+        columns = X_test.columns
+        index = X_test.index
+        X_test = pd.DataFrame(MinMaxScaler().fit_transform(X_test), columns=columns, index=index)
+
+        columns = y_train.columns
+        index = y_train.index
+        y_train = pd.DataFrame(MinMaxScaler().fit_transform(y_train), columns=columns, index=index)
+
+        columns = y_val.columns
+        index = y_val.index
+        y_val = pd.DataFrame(MinMaxScaler().fit_transform(y_val), columns=columns, index=index)
+
+        columns = y_test.columns
+        index = y_test.index
+        y_test = pd.DataFrame(MinMaxScaler().fit_transform(y_test), columns=columns, index=index)
+
+    dataset_train = StockDataset(X_train, y_train, window)
+    dataset_val = StockDataset(X_val, y_val, window)
+    dataset_test = StockDataset(X_test, y_test, window)
+
+    return dataset_train, dataset_val, dataset_test
