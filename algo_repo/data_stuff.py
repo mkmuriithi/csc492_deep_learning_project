@@ -57,7 +57,7 @@ def get_multistock_dict(subset):
     stock_dict = {}
     list_of_stocks_included = []
     # randomly choose stocks
-
+    n_years_ago_date = get_date_n_years_ago(3)
     if subset:
         pass
     else:
@@ -65,8 +65,20 @@ def get_multistock_dict(subset):
         for stock_dir_name in temp:
             stock_name = stock_dir_name.split(".")[0]
             df = pd.read_csv(f'./Data/{stock_dir_name}')
-            df["Date"]
-            stock_dict[stock_name] = pd.read_csv(f'./Data/{stock_dir_name}')
-            list_of_stocks_included.append(stock_name)
+            df["Date"] = pd.to_datetime(df['Date'])
+            if df['Date'][0].date() > n_years_ago_date: #only if we have at least n years worth of data
+                continue
+            else:
+                stock_dict[stock_name] = df
+                list_of_stocks_included.append(stock_name)
 
     return stock_dict
+
+def get_date_n_years_ago(n):
+
+    import datetime
+    today = datetime.datetime.today().date()
+    days_per_year = 365.24
+    years_ago = n
+    n_years_ago = today - datetime.timedelta(days=(days_per_year * years_ago))
+    return n_years_ago
