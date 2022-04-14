@@ -6,7 +6,7 @@ from ta.momentum import AwesomeOscillatorIndicator
 from ta.trend import sma_indicator as sma
 from ta.trend import EMAIndicator as ema
 from ta.volume import VolumeWeightedAveragePrice as vwap
-import os
+from StockDataLoader import *
 
 
 def add_features(data):
