@@ -44,7 +44,9 @@ def get_dataset(single=True, subset=False):
     '''
     data = None
     if single:
-        return pd.read_csv("./Data/AAPL.csv")
+        data = pd.read_csv("./Data/XOM.csv")
+        data["Date"] = pd.to_datetime(data['Date'])
+        return data
     else:
         return get_multistock_dict(subset)
 
@@ -62,6 +64,8 @@ def get_multistock_dict(subset):
         # add all stocks to dict
         for stock_dir_name in temp:
             stock_name = stock_dir_name.split(".")[0]
+            df = pd.read_csv(f'./Data/{stock_dir_name}')
+            df["Date"]
             stock_dict[stock_name] = pd.read_csv(f'./Data/{stock_dir_name}')
             list_of_stocks_included.append(stock_name)
 

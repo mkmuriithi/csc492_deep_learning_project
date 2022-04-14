@@ -212,6 +212,12 @@ def train(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_e
     logging.info(f'\n{log_datetime}\nFinal Train Loss: {final_training_loss}\nFinal Validation Loss: {final_validation_loss} \n '
                  f'Average Train Loss: {average_training_loss}\n\n')
 
+    #pickle model
+
+    model_name = "model_pickles/model_date_%m_%d_%Y_time_%H:%M.pt"
+    model_name = datetime.now().strftime(model_name)
+    torch.save(model.state_dict(), model_name)
+
     return train_losses, val_losses, baseline_losses, iters
 
 
@@ -319,7 +325,7 @@ def plot_predictions(model, data):
     plt.show()
 
 def treat_single_stock(data):
-    data.reset_index(inplace=True)
+    #data.reset_index(inplace=True)
     dayoftheweek = data['Date'].dt.dayofweek + 1
     data['Date'] = pd.Series(dayoftheweek)
     data['Target'] = data["Close"].shift(-1)
@@ -353,11 +359,13 @@ if __name__ == '__main__':
 
     #get list of stocks to train on
     #data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
-    data = get_dataset(single=False, subset=False)
-    #data = treat_single_stock(data)
-    data = treat_multiple_stock(data)
+    data = get_dataset(single=True, subset=False)
+
+    data = treat_single_stock(data)
+    #data = treat_multiple_stock(data)
 
 
+    print(f'The shape of the input is {data.shape[0]}')
 
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
@@ -365,9 +373,3 @@ if __name__ == '__main__':
     train_losses, val_losses, baseline_losses, iters = train(model, data)
     #pickle model for frontend
 
-
-
-    model_name = "models_pickles/model_date_%m_%d_%Y_time_%H:%M.p"
-    with open(model_name, 'wb') as model_save_location:
-        pickle.dump(model, model_save_location)
-        
