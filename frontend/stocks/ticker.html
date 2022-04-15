@@ -1,10 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ ticker }}{% endblock %}
 {% block content %}
-<div class="container text-center">
+<div class="container text-left">
     <h1>{{ ticker_info.shortName }} ({{ ticker|upper }})</h1>
+    
+    {% for day_close in raw_30_days_adjclose %}
+        <p>{{day_close}}</p>
+    {% endfor %}
+
+    <!-- {{prediction}} -->
+    <!-- then put the above 30 days adj_close + 1 day pred to graph -->
+
+    <h3>Raw 30 Data from yfinance for prediction:</h3>
     {{ ticker_30_days_data_html|safe }}
-    <p>Description: {{ticker_info.longBusinessSummary}}</p>
+    <h3>Company Description:</h3>
+    <p>{{ticker_info.longBusinessSummary}}</p>
     <script src="" async defer></script>
 </div>
 {% endblock %}

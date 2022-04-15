@@ -16,5 +16,5 @@ def get_30_days_data(ticker):
     '''
     # todo: check valid ticker string
     # todo. only return adj close.
-    data = yf.download(ticker, period="30d") # dataframe
-    return data 
+    data = yf.download(ticker, period="30d")
+    return data  # dataframe
