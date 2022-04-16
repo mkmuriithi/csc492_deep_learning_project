@@ -117,7 +117,7 @@ def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.yscale("log")
-    fig_datetime = datetime.now().strftime("multi_batch_figures/fig_date_%m_%d_%Y_time_%H:%M")
+    fig_datetime = datetime.now().strftime("multi_batch_figures/fig_date_%m_%d_%Y_time_%H_%M")
     plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
 
@@ -133,7 +133,7 @@ def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=
         f'Average Train Loss: {average_training_loss}\n\n')
     # pickle model
 
-    model_name = "multi_batch_model_pickles/model_date_%m_%d_%Y_time_%H:%M.pt"
+    model_name = "multi_batch_model_pickles/model_date_%m_%d_%Y_time_%H_%M.pt"
     model_name = datetime.now().strftime(model_name)
     torch.save(model.state_dict(), model_name)
 
