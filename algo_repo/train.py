@@ -203,7 +203,7 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.yscale("log")
-    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H:%M")
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H_%M")
     plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
 
@@ -217,7 +217,7 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
 
     # pickle model
 
-    model_name = "model_pickles/model_date_%m_%d_%Y_time_%H:%M.pt"
+    model_name = "model_pickles/model_date_%m_%d_%Y_time_%H_%M.pt"
     model_name = datetime.now().strftime(model_name)
     torch.save(model.state_dict(), model_name)
 
