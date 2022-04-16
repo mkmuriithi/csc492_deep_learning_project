@@ -10,6 +10,21 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     </head>
     <body>
+        <div id="sidebar">
+            {% block sidebar %} 
+
+            <ul>
+                <li>
+                    <a href="/">Home</a>
+                </li>
+                <li>
+                    <a href="/">About</a>
+                </li>
+
+
+            </ul>
+            {% endblock %}
+        </div>
         {% block content %}{% endblock %}
         <script src="" async defer></script>
     </body>
