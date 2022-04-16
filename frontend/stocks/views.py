@@ -1,10 +1,19 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import TickerForm
-from .yfinance import get_30_days_data, get_ticker_info
+from .data import get_n_days_data, get_ticker_info
 import logging
+from .prediction import *
+
+
+from    train import *
+from train_multiple import *
+
 # TODO: import model
  
+ #Dango views receve wen request and return web response
+ #Here we return a html page, where the context key-value pairs we add define
+ # what the passed over html will return
 def index(request):
     if request.method == 'POST':
         form = TickerForm(request.POST)
@@ -19,14 +28,20 @@ def index(request):
 def ticker(request, ticker_id):
     context = {}
     context['ticker'] = ticker_id
-    dataframe_30_days_data = get_30_days_data(ticker_id) #dataframe
+    dataframe_30_days_data = get_n_days_data(ticker_id) #dataframe
     raw_30_days_data =  dataframe_30_days_data.to_numpy()
     raw_30_days_adj_close = raw_30_days_data[:, 4]
     # TODO: pass to model
-    ## load model.... for example
+    #Single stock path
+    single_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/model_pickles/model_date_04_14_2022_time_19_51.pt"
+    prediction_single = get_prediction(single_path, ticker_id)
+    context['model_prediction_single_stock'] =  prediction_single
+
+    #make prediction
+
         # model = TheModelClass(*args, **kwargs)
         # model.load_state_dict(torch.load(PATH))
-        # model.eval()
+        # model.eval()git 
 
     # prediction = model.predict(raw_30_days_adj_close)
     # context['prediction'] = prediction
@@ -35,3 +50,10 @@ def ticker(request, ticker_id):
     # todo: prediction. plotly
     context['ticker_info'] = get_ticker_info(ticker_id)
     return render(request, 'ticker.html', context)
+
+
+
+
+
+
+
