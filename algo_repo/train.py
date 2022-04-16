@@ -8,7 +8,6 @@ from torch import Tensor
 import matplotlib.pyplot as plt
 from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
-from utils import *
 from data_stuff import *
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from datetime import datetime
@@ -16,7 +15,7 @@ import logging
 import random
 import os
 import pickle
-
+import numpy as np
 # setting seed for torch random number generator, for reproducability
 torch.manual_seed(42)
 np.random.seed(42)
@@ -170,7 +169,7 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
                             X = X.cuda()
                             y = y.cuda()
                             mask = mask.cuda()
-
+                        print(f"Shape of X is {X.shape} and shape of mask is {mask.shape}")
                         out = model(X, mask)
                         loss = criterion(out, y)
                         val_loss.append(loss.item())  # save validation loss

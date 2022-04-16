@@ -7,7 +7,7 @@ from ta.trend import sma_indicator as sma
 from ta.trend import EMAIndicator as ema
 from ta.volume import VolumeWeightedAveragePrice as vwap
 from StockDataLoader import *
-
+import os
 
 def add_features(data):
     data["Sma_10"] = sma(data.Close, window=10, fillna=False)
