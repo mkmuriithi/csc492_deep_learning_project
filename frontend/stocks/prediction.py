@@ -6,18 +6,21 @@ from train import *
 from train_multiple import *
 from data_stuff import *
 import torch
-from .data import get_n_days_data
-from .data import get_transformed_data
+#from .data import get_n_days_data
+#from .data import get_transformed_data
+from .data import Data
 
-def get_prediction(path_of_pickle, ticker):
+def get_prediction(path_of_pickle, df):
     '''
     Passing in relative path
+    df is the Data class we defined
     '''
 
     #get the data
-    data = get_n_days_data(ticker, 44) #needs 44 days of data for feature engineering
+    data = df.get_n_days_data(44)
+    #data = get_n_days_data(ticker, 44) #needs 44 days of data for feature engineering
 
-    X, mask = get_transformed_data(data)
+    X, mask = df.get_transformed_data()
     #make the model
     model = TransformerModel(transf_params)
     model.load_state_dict(torch.load(path_of_pickle))

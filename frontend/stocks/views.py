@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import TickerForm
-from .data import get_n_days_data, get_ticker_info
+#from .data import get_n_days_data, get_ticker_info
+from .data import Data
 import logging
 from .prediction import *
 
@@ -28,17 +29,26 @@ def index(request):
 def ticker(request, ticker_id):
     context = {}
     context['ticker'] = ticker_id
-    dataframe_30_days_data = get_n_days_data(ticker_id) #dataframe
-    raw_30_days_data =  dataframe_30_days_data.to_numpy()
-    raw_30_days_adj_close = raw_30_days_data[:, 4]
+
+    #create class
+    df = Data(ticker_id)
+    dataframe_30_days_data = df.get_n_days_data(30)
+    #dataframe_30_days_data = get_n_days_data(ticker_id) #dataframe
+    raw_30_days_data =  dataframe_30_days_data.to_numpy() #already adjusted
+    raw_30_days_adj_close = raw_30_days_data
+    #raw_30_days_adj_close = raw_30_days_data[:, 4]
     # TODO: pass to model
     #For a given stock, we will have individually trained models for that stock, and use the ticker ID and do
     # string formatting to get the appropriate single model
     single_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/model_pickles/model_date_04_14_2022_time_19_51.pt"
     multi_stock_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/multi_batch_model_pickles/model_date_04_16_2022_time_00_17.pt"
 
-    prediction_single = get_prediction(single_path, ticker_id)
-    prediction_multiple = get_prediction(multi_stock_path, ticker_id)
+
+    prediction_single = get_prediction(single_path, df)
+    prediction_multiple = get_prediction(multi_stock_path, df)
+    #prediction_single = get_prediction(single_path, ticker_id)
+    #prediction_multiple = get_prediction(multi_stock_path, ticker_id)
+
 
     context['model_prediction_single_stock'] =  prediction_single
     context['model_prediction_multiple_stock'] = prediction_multiple
