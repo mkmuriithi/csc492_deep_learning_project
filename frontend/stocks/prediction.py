@@ -9,10 +9,6 @@ import torch
 from .data import get_n_days_data
 from .data import get_transformed_data
 
-
-
-single_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/model_pickles/model_date_04_14_2022_time_19_51.pt"
-
 def get_prediction(path_of_pickle, ticker):
     '''
     Passing in relative path

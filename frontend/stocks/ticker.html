@@ -13,8 +13,11 @@
 
     <h3>Raw 30 Data from yfinance for prediction:</h3>
     {{ ticker_30_days_data_html|safe }}
-    <h3>Model prediction</h3>
-    <p>{{ model_prediction_single_stock}}</p?
+    <h3>Model prediction for {{ ticker }}</h3>
+    <p>Model trained only on {{ ticker }} {{ model_prediction_single_stock }}</p>
+</br>
+    <p>Model trained on all tickers: {{ model_prediction_multiple_stock }}</p>
+</br>
     <h3>Company Description:</h3>
     <p>{{ticker_info.longBusinessSummary}}</p>
     <script src="" async defer></script>
