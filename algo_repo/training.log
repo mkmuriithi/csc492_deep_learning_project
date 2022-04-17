@@ -1,0 +1,133 @@
+$(levelname)s: Final Train Loss: 0.005688225437947752
+Final Validation Loss: 0.020311888721254136 
+Average Train Loss: 0.0060841981212674595
+
+
+$(levelname)s: Final Train Loss: 0.005721770622387893
+Final Validation Loss: 0.02305695502501395 
+Average Train Loss: 0.006057209805431603
+
+
+INFO: Final Train Loss: 0.005721788122647685
+Final Validation Loss: 0.023057230437795322 
+Average Train Loss: 0.006057226288486045
+
+
+INFO: 
+Date: 04/11/2022
+Time: 23:46:$S
+Final Train Loss: 0.005721778963166086
+Final Validation Loss: 0.023057175438023277 
+ Average Train Loss: 0.006057229931667366
+
+
+INFO: 
+Date: 04/12/2022
+Time: 00:06:$S
+Final Train Loss: 0.005721771314552904
+Final Validation Loss: 0.023057147808786895 
+ Average Train Loss: 0.0060572259083774335
+
+
+INFO: 
+Date: 04/13/2022
+Time: 00:05:$S
+Final Train Loss: 0.005860638420057037
+Final Validation Loss: 0.019378991694086127 
+ Average Train Loss: 0.006073036493707268
+
+
+INFO: 
+Date: 04/13/2022
+Time: 00:11:$S
+Final Train Loss: 0.005860605060107722
+Final Validation Loss: 0.019379240641784336 
+ Average Train Loss: 0.00607302039741502
+
+
+INFO: 
+Date: 04/13/2022
+Time: 23:11
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/13/2022
+Time: 23:58
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/14/2022
+Time: 00:08
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/14/2022
+Time: 00:15
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/14/2022
+Time: 01:26
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/14/2022
+Time: 03:00
+Final Train Loss: 0.01631615792259412
+Final Validation Loss: 0.11980683894621001 
+ Average Train Loss: 0.035238678815033106
+
+
+INFO: 
+Date: 04/14/2022
+Time: 03:53
+Final Train Loss: 0.0024315417828367335
+Final Validation Loss: 0.007745798133934538 
+ Average Train Loss: 0.011899442668328902
+
+
+INFO: 
+Date: 04/14/2022
+Time: 04:21
+Final Train Loss: 0.0074374922551214695
+ Average Train Loss: 0.01161906214289253
+
+
+INFO: 
+Date: 04/14/2022
+Time: 19:37
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/14/2022
+Time: 19:51
+Final Train Loss: 0.0037525202275466418
+Final Validation Loss: 0.09537056150535743 
+ Average Train Loss: 0.004070945243886687
+
+
+INFO: 
+Date: 04/16/2022
+Time: 00:17
+Final Train Loss: 0.0074374922551214695
+ Average Train Loss: 0.01161906214289253
+
+
