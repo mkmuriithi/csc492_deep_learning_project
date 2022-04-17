@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch
 import math
+import csv
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import DataLoader
 from torch import Tensor
@@ -94,10 +95,10 @@ class transf_params:
     lr = 0.01
 
 
-def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_epochs=10,
-                 weight_decay=0.1):
+def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-6, num_epochs=10,
+                 weight_decay=0):
     # create training, valid and test sets of StockDataset type data
-    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
+    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=False)
     # normalize data
 
     # preserving reproducability in dataloader with
@@ -196,9 +197,9 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
     # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title(f"Training Curve (lr={learning_rate}, wd={weight_decay})")
+    plt.plot(iters, baseline_losses, label='baseline')
     plt.plot(iters, train_losses, label='Train')
     plt.plot(iters, val_losses, label='Validation')
-    plt.plot(iters, baseline_losses, label='baseline')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
@@ -265,7 +266,7 @@ def seed_worker(worker_id):
 
 
 def plot_predictions(model, data):
-    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
+    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=False)
     train_dataloader = DataLoader(train_custom, batch_size=1, shuffle=True)
     val_dataloader = DataLoader(valid_custom, batch_size=1, shuffle=True)
 
@@ -383,20 +384,27 @@ if __name__ == '__main__':
     #train_losses, val_losses, baseline_losses, iters = train_single(model, data)
     
     lines = []
-    for lr in [1e-6, 1e-7, 1e-8]:
-        for wd in [1e-1, 1e-3, 1e-5, 0]:
+    for lr in [1e-4, 1e-5, 1e-6, 1e-7]:
+        for wd in [0.1, 0.01, 0]:
             model_cop = copy.deepcopy(model)
-            train_losses, val_losses, baseline_losses, iters = train_single(model_cop, data, num_epochs=10, learning_rate=lr, weight_decay=wd)
+            train_losses, val_losses, baseline_losses, iters = train_single(model_cop, data, num_epochs=50, learning_rate=lr, weight_decay=wd)
             lines.append(val_losses + [f"lr={lr} wd={wd}"])
+    
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H_%M")
             
     for i, line in enumerate(lines):
-        plt.plot(line[:-1], label=line[-1], color=getColor('autumn', len(lines), i))
+        plt.plot(line[:-1], label=line[-1], color=getColor('hsv', len(lines) + 1, i))
+    
+    # save csv
+    with open(fig_datetime + ".csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(lines)
         
+    # save plot
     plt.title("Hyperparameter Tuning (Validation Curves)")
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.yscale("log")
     plt.legend()
-    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H_%M")
     plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
