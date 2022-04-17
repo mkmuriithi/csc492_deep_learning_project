@@ -5,6 +5,7 @@ import math
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import DataLoader
 from torch import Tensor
+import numpy as np
 import matplotlib.pyplot as plt
 from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
