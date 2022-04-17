@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from ta.momentum import RSIIndicator as rsi
@@ -8,6 +9,7 @@ from ta.trend import EMAIndicator as ema
 from ta.volume import VolumeWeightedAveragePrice as vwap
 from StockDataLoader import *
 import os
+from tqdm import tqdm
 
 def add_features(data):
     data["Sma_10"] = sma(data.Close, window=10, fillna=False)
@@ -62,7 +64,7 @@ def get_multistock_dict(subset):
         pass
     else:
         # add all stocks to dict
-        for stock_dir_name in temp:
+        for stock_dir_name in tqdm(temp):
             stock_name = stock_dir_name.split(".")[0]
             df = pd.read_csv(f'./Data/{stock_dir_name}')
             df["Date"] = pd.to_datetime(df['Date'])

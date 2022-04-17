@@ -5,6 +5,7 @@ import math
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import DataLoader
 from torch import Tensor
+import numpy as np
 import matplotlib.pyplot as plt
 from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
@@ -16,6 +17,7 @@ import random
 import os
 import pickle
 import numpy as np
+import copy
 # setting seed for torch random number generator, for reproducability
 torch.manual_seed(42)
 np.random.seed(42)
@@ -169,7 +171,6 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
                             X = X.cuda()
                             y = y.cuda()
                             mask = mask.cuda()
-                        print(f"Shape of X is {X.shape} and shape of mask is {mask.shape}")
                         out = model(X, mask)
                         loss = criterion(out, y)
                         val_loss.append(loss.item())  # save validation loss
@@ -345,9 +346,11 @@ def treat_single_stock(data):
                               inplace=True)
     return data
 
-
-
-
+def getColor(c, N, idx):
+    import matplotlib as mpl
+    cmap = mpl.cm.get_cmap(c)
+    norm = mpl.colors.Normalize(vmin=0.0, vmax=N - 1)
+    return cmap(norm(idx))
 
 if __name__ == '__main__':
 
@@ -376,5 +379,24 @@ if __name__ == '__main__':
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
         model = model.cuda()
-    train_losses, val_losses, baseline_losses, iters = train_single(model, data)
-    # pickle model for frontend
+    
+    #train_losses, val_losses, baseline_losses, iters = train_single(model, data)
+    
+    lines = []
+    for lr in [1e-6, 1e-7, 1e-8]:
+        for wd in [1e-1, 1e-3, 1e-5, 0]:
+            model_cop = copy.deepcopy(model)
+            train_losses, val_losses, baseline_losses, iters = train_single(model_cop, data, num_epochs=10, learning_rate=lr, weight_decay=wd)
+            lines.append(val_losses + [f"lr={lr} wd={wd}"])
+            
+    for i, line in enumerate(lines):
+        plt.plot(line[:-1], label=line[-1], color=getColor('autumn', len(lines), i))
+        
+    plt.title("Hyperparameter Tuning (Validation Curves)")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.yscale("log")
+    plt.legend()
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H_%M")
+    plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
+    plt.show()

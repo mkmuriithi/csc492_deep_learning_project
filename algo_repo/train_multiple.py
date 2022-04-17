@@ -1,19 +1,22 @@
 from train import *
+import tqdm
 
 def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=8, learning_rate=1e-7, num_epochs=10,
                  weight_decay=0.1):
-
     optimizer = optim.Adam(model.parameters(),
                            lr=learning_rate,
                            weight_decay=weight_decay)
     iters, train_losses, val_losses, baseline_losses = [], [], [], []
     mse = nn.L1Loss(reduction="mean")
     criterion = torch.nn.MSELoss(reduction='mean')
-    n=0
+    
     #note that stocks that don't have at least 3 years worth of training data will not be included
+    n = 0
     for epoch in range(0, num_epochs):
         print(f'Epoch {epoch} training beginning...')
-        for ticker in data_dict.keys():
+        # annotate for evaluation
+        model.train()
+        for iter_num, ticker in enumerate(data_dict.keys()):
             data = data_dict[ticker]
             train_custom = None
             valid_custom = None
@@ -36,83 +39,61 @@ def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=
                                         worker_init_fn=seed_worker,
                                         generator=g)  # does same
 
-
-            #for epoch in range(0, num_epochs):
-                #print(f'Epoch {epoch} training beginning...')
-            #for data in train_dataloader:
-            X, y, X_baseline, y_baseline = next(iter(train_dataloader))
-            mask = torch.zeros(X.shape[1], X.shape[1])
-            if torch.cuda.is_available():
-                X = X.cuda()
-                y = y.cuda()
-                mask = mask.cuda()
-
-            model.train()  # annotate for train
-            out = model(X, mask)
-            loss = criterion(out, y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-            train_loss = loss.item()  # save training loss
-
+            train_loss = []
+            for X, y, X_baseline, y_baseline in train_dataloader:
+                mask = torch.zeros(X.shape[1], X.shape[1])
+                if torch.cuda.is_available():
+                    X = X.cuda()
+                    y = y.cuda()
+                    mask = mask.cuda()
+    
+                out = model(X, mask)
+                loss = criterion(out, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                train_loss.append(loss.item()) # track training loss
+                
+            train_loss = np.mean(train_loss) # save iteration training loss
+            
             if n % 100 == 0:
+    
                 # annotate for evaluation
-                '''
                 model.eval()
-                train_loss = []
-                val_loss = []
                 with torch.no_grad():
-
-                    for data in train_dataloader:
-                        X, y, X_baseline, y_baseline = data
+                    val_loss = []
+                    for X, y, X_baseline, y_baseline in val_dataloader:
                         mask = torch.zeros(X.shape[1], X.shape[1])
                         if torch.cuda.is_available():
                             X = X.cuda()
                             y = y.cuda()
                             mask = mask.cuda()
-
+                
                         out = model(X, mask)
                         loss = criterion(out, y)
-                        train_loss.append(loss.item())  # save validation loss
-
-                    for data in val_dataloader:
-                        X, y, X_baseline, y_baseline = data
-                        mask = torch.zeros(X.shape[1], X.shape[1])
-                        if torch.cuda.is_available():
-                            X = X.cuda()
-                            y = y.cuda()
-                            mask = mask.cuda()
-
-                        out = model(X, mask)
-                        loss = criterion(out, y)
-                        val_loss.append(loss.item())  # save validation loss
-
-                    val_loss = np.mean(val_loss)  # mean reduction
-                    train_loss = np.mean(train_loss)
-                '''
+                        val_loss.append(loss.item()) # track validation loss
+                
+                    val_loss = np.mean(val_loss) # save iteration validation loss
+                
                 # save current training info
-                iters.append(n)
                 train_losses.append(train_loss)
-                #val_losses.append(val_loss)
+                val_losses.append(val_loss)
                 baseline_losses.append(get_last_price_close_mse(y_baseline))
                 # train_acc.append(get_accuracy(model, train_custom, train=True))
                 # val_acc.append`(get_accuracy(model, valid_custom, train=False))
-                # train_losses.append(loss.item())  # average loss
-                #print(f'Iteration: {n}, Train Loss: {train_losses[-1]}, Val Loss: {val_losses[-1]}')
-                print(f'Iteration: {n}, Train Loss: {train_losses[-1]}')
+                print(f'Epoch {epoch} Iteration {iter_num}/{len(data_dict.keys())} (Ticker: {ticker}) | Train Loss: {round(train_losses[-1], 4)} | Val Loss: {round(val_losses[-1], 4)} | Baseline Loss: {round(baseline_losses[-1], 4)}')
+
             n += 1
 
-                # predict validation
-
-    final_loss = train_losses[1]
+    final_loss = train_losses[-1]
     print(f'Final Training Loss: {final_loss}')
     # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title(f"Training Curve (lr={learning_rate}, wd={weight_decay})")
-    plt.plot(iters, train_losses, label='Train')
-    #plt.plot(iters, val_losses, label='Validation')
-    plt.plot(iters, baseline_losses, label='baseline')
+    plt.plot(train_losses, label='Train')
+    plt.plot(val_losses, label='Validation')
+    plt.plot(baseline_losses, label='baseline')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
@@ -122,7 +103,7 @@ def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=
     plt.show()
 
     final_training_loss = train_losses[-1]
-    #final_validation_loss = val_losses[-1]
+    final_validation_loss = val_losses[-1]
     average_training_loss = np.mean(train_losses)
     log_datetime = datetime.now().strftime("Date: %m/%d/%Y\nTime: %H:%M")
     '''logging.info(
