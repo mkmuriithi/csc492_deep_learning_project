@@ -5,11 +5,9 @@ import torch
 
 from .data import Data
 
-sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
-
-from train import *
-from train_multiple import *
-from data_stuff import *
+from .algo_files.train import *
+from .algo_files.train_multiple import * 
+from .algo_files.data_stuff import *
 
 def get_prediction(path_of_pickle, df):
     '''
@@ -24,7 +22,12 @@ def get_prediction(path_of_pickle, df):
     X, mask = df.get_transformed_data()
     #make the model
     model = TransformerModel(transf_params)
-    model.load_state_dict(torch.load(path_of_pickle))
+    
+    if torch.cuda.is_available():
+        model.load_state_dict(torch.load(path_of_pickle))
+    else: #if only cpu
+        model.load_state_dict(torch.load(path_of_pickle, map_location=torch.device('cpu')))
+
     model.eval()
 
     if torch.cuda.is_available():

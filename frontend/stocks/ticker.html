@@ -11,9 +11,13 @@
     {{ ticker_30_days_data_html|safe }}
     <h3>Model prediction for {{ ticker }}</h3>
     <p>Previous Closing Price: {{ previous_price }} </p><br>
+
+    {% if single_model_exists %}
     <p>Model trained only on {{ ticker }}<br>
         Predicted Percentage Change: {{ single_pred_percent }}<br>
         Predicted Closing Price: {{ single_pred_abs }}</p>
+    {% endif%}
+
 </br>
     <p>Model trained on all tickers: {{ model_prediction_multiple_stock }}<br>
         Predicted Percentage Change: {{ multiple_pred_percent }}<br>
