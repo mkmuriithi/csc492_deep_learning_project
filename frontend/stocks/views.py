@@ -7,13 +7,9 @@ import logging
 from .prediction import *
 
 import os
-sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
-
-from train import *
-from train_multiple import * 
-from data_stuff import *
-
-
+from .algo_files.train import *
+from .algo_files.train_multiple import * 
+from .algo_files.data_stuff import *
 
 
 # TODO: import model
