@@ -67,15 +67,8 @@ class TransformerModel(nn.Module):
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, src: Tensor, src_mask: Tensor) -> Tensor:
-        """
-        Args:
-            src: Tensor, shape [batch_size, seq_len]
-            src_mask: Tensor, shape [seq_len, seq_len]
+    def forward(self, src, src_mask) :
 
-        Returns:
-            output Tensor of shape [batch_size, seq_len, ntoken]
-        """
         src = self.embedding(src)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src, src_mask)
