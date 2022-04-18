@@ -36,6 +36,9 @@ def get_prediction(path_of_pickle, df):
     out = out.squeeze()
     out = out.detach()
     out = out.numpy()
-    return  out
+
+    percentage_out = out
+    absolute_out = out * float(df.get_n_days_data(1).Close)
+    return  percentage_out, absolute_out
 
 #def reverse_normalization()

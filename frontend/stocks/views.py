@@ -44,14 +44,17 @@ def ticker(request, ticker_id):
     multi_stock_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/multi_batch_model_pickles/model_date_04_16_2022_time_00_17.pt"
 
 
-    prediction_single = get_prediction(single_path, df)
-    prediction_multiple = get_prediction(multi_stock_path, df)
+    single_percentage_out, single_absolute_out = get_prediction(single_path, df)
+    multiple_precentage_out, multiple_absolute_out = get_prediction(multi_stock_path, df)
     #prediction_single = get_prediction(single_path, ticker_id)
     #prediction_multiple = get_prediction(multi_stock_path, ticker_id)
 
 
-    context['model_prediction_single_stock'] =  prediction_single
-    context['model_prediction_multiple_stock'] = prediction_multiple
+    context['single_pred_percent'] =  single_percentage_out
+    context['single_pred_abs'] = single_absolute_out
+    context['multiple_pred_percent'] = multiple_precentage_out
+    context['multiple_pred_abs'] = multiple_absolute_out
+
 
     #make prediction
 

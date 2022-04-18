@@ -14,9 +14,13 @@
     <h3>Raw 30 Data from yfinance for prediction:</h3>
     {{ ticker_30_days_data_html|safe }}
     <h3>Model prediction for {{ ticker }}</h3>
-    <p>Model trained only on {{ ticker }} {{ model_prediction_single_stock }}</p>
+    <p>Model trained only on {{ ticker }}<br>
+        Predicted Percentage Change: {{ single_pred_percent }}<br>
+        Predicted Closing Price: {{ single_pred_abs }}</p>
 </br>
-    <p>Model trained on all tickers: {{ model_prediction_multiple_stock }}</p>
+    <p>Model trained on all tickers: {{ model_prediction_multiple_stock }}<br>
+        Predicted Percentage Change: {{ multiple_pred_percent }}<br>
+        Predicted Closing Price: {{ multiple_pred_abs }}</p>
 </br>
     <h3>Company Description:</h3>
     <p>{{ticker_info.longBusinessSummary}}</p>

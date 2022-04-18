@@ -60,7 +60,7 @@ def get_transformed_data(data):
 class Data:
     
     #pass ticker when initializing
-    def __init__(self, ticker, n_days=60):
+    def __init__(self, ticker, n_days=45):
         self.ticker = ticker
         self.info = yf.Ticker(ticker).info
         self.data = yf.download(ticker, period=f"{n_days}d", auto_adjust=True)
