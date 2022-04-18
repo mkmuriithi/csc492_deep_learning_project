@@ -22,7 +22,11 @@ def get_prediction(path_of_pickle, df):
     X, mask = df.get_transformed_data()
     #make the model
     model = TransformerModel(transf_params)
+    
     model.load_state_dict(torch.load(path_of_pickle))
+    # If using CPU:
+    # model.load_state_dict(torch.load(path_of_pickle, map_location=torch.device('cpu')))
+
     model.eval()
 
     if torch.cuda.is_available():
