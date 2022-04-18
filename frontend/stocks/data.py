@@ -83,6 +83,8 @@ class Data:
         data_tensor = torch.Tensor(X_scaled_data)
         mask = torch.zeros(data_tensor.shape[0], data_tensor.shape[0])
         data_tensor = data_tensor.unsqueeze(0)
-        return data_tensor, mask, X_scaler
+        return data_tensor, mask#, X_scaler
+    def get_ticker_info(self):
+        return self.info
     
 

@@ -64,7 +64,7 @@ def ticker(request, ticker_id):
     context['raw_30_days_adjclose'] = raw_30_days_data[:, 4]
     context['ticker_30_days_data_html'] = dataframe_30_days_data.to_html()
     # todo: prediction. plotly
-    context['ticker_info'] = get_ticker_info(ticker_id)
+    context['ticker_info'] = df.get_ticker_info()
     return render(request, 'ticker.html', context)
 
 
