@@ -23,7 +23,7 @@ def train_multi_batch_per_ticker(model, data_dict, optimizer='adam', batch_size=
             test_custom = None
 
             try:
-                train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
+                train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=False)
             except ValueError:
                 print(f'The stock that is causing issues is {ticker}')
 
