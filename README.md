@@ -3,14 +3,15 @@
 In this project, we trained a Transformer model to predict a single stock's next day closing price, given a sequence (eg 30 days) of stock data. 
 
 This README comprises of the following sections:
-- [Background](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#background)
-- [Data Collection](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#data-collection)
-- [Transformer Model](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#transformer-model)
-- [Results](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#results)
-- [Caveats](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#caveats)
-- [Ethical Considerations](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#ethical-considerations)
-- [Contributing](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#contributing)
-- [License](https://github.com/mkmuriithi/csc492_deep_learning_project/edit/main/README.md#license)
+https://github.com/mkmuriithi/csc492_deep_learning_project#stock-prediction
+- [Background](https://github.com/mkmuriithi/csc492_deep_learning_project#background)
+- [Data Collection](https://github.com/mkmuriithi/csc492_deep_learning_project#data-collection)
+- [Transformer Model](https://github.com/mkmuriithi/csc492_deep_learning_project#transformer-model)
+- [Results](https://github.com/mkmuriithi/csc492_deep_learning_project#results)
+- [Caveats](https://github.com/mkmuriithi/csc492_deep_learning_project#caveats)
+- [Ethical Considerations](https://github.com/mkmuriithi/csc492_deep_learning_project#ethical-considerations)
+- [Contributing](https://github.com/mkmuriithi/csc492_deep_learning_project#contributing)
+- [License](https://github.com/mkmuriithi/csc492_deep_learning_project#license)
 ---
 
 ## Background
@@ -35,6 +36,7 @@ We were interested to test its application in time series prediction, in particu
 If you're not familiar with transformers, first check these out:
 - [The Illustrated Transformer by Jay Alammar](https://jalammar.github.io/illustrated-transformer/)
 - [Original paper "Attention is All You Need"](https://arxiv.org/abs/1706.03762) 
+
 ---
 
 ## Data Collection
@@ -103,6 +105,7 @@ We decided to evaluate two types of model:
 - Next, we take the maximum and mean of each feature over the output sequence.
 - Finally, we use a linear layer to combine the maximum and mean values into a single prediction.
 <img width="152" alt="Screenshot 2022-04-18 at 7 05 09 AM" src="https://user-images.githubusercontent.com/17236572/163820187-9ef23a55-645c-4bb4-9793-7dc2478296b2.png">
+
 ---
 
 ## Results
