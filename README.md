@@ -109,7 +109,14 @@ We decided to evaluate two types of model:
 ---
 
 ## Results
+Note that the model predicts a percentage change from the previous price of a given ticker. The percentage change is a number between 0 and 1 (i.e. represented as a decimal) and may be multiplied by 100 to get percentage change out of 100.
 
+Given 30 days of Open, High, Low, Close, and Volume data 
+Example model output on the ticker BA (Boeing):
+
+<b>-0.00421</b>
+
+Interpretation: The closing price of boeing is predicted to go down by -4.21% from the previous closing price at market close.
 
 ---
 ## Caveats
