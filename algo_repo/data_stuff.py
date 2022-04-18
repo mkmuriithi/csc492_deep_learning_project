@@ -38,15 +38,16 @@ def get_treated(data, to_daily_returns=True, features_to_exclude=['Date']):
     return data
 
 
-def get_dataset(single=True, subset=False):
+def get_dataset(single=True, subset=False, ticker_to_train="XOM"):
     '''
     If single stock, then only do apple, and second parameter is not relevant
     If mulitstock, then second parameter determines if a subset of the stocks will be selected to be trained on
     on or if all stocks in the nyse_list will be trained on
+    NOTE that if 'single' is False, ticker_to_train is ignored
     '''
     data = None
     if single:
-        data = pd.read_csv("./Data/XOM.csv")
+        data = pd.read_csv(f'./Data/{ticker_to_train}.csv')
         data["Date"] = pd.to_datetime(data['Date'])
         return data
     else:

@@ -347,6 +347,7 @@ def treat_single_stock(data):
                               inplace=True)
     return data
 
+
 def getColor(c, N, idx):
     import matplotlib as mpl
     cmap = mpl.cm.get_cmap(c)
@@ -369,9 +370,9 @@ if __name__ == '__main__':
     except Exception as e:
         print("An exception occured while trying to create path for model pickles to be stored in")
 
-    # get list of stocks to train on
-    # data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
-    data = get_dataset(single=True, subset=False)
+    ticker_to_train = "XOM" #defauly single stock model will be Exxon
+
+    data = get_dataset(single=True, subset=False, ticker_to_train=ticker_to_train)
 
     data = treat_single_stock(data)
     # data = treat_multiple_stock(data)
@@ -381,8 +382,8 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         model = model.cuda()
     
-    #train_losses, val_losses, baseline_losses, iters = train_single(model, data)
-    
+    train_losses, val_losses, baseline_losses, iters = train_single(model, data)
+    '''
     lines = []
     for lr in [1e-4, 1e-5, 1e-6, 1e-7]:
         for wd in [0.1, 0.01, 0]:
@@ -408,3 +409,4 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
     plt.show()
+    '''
