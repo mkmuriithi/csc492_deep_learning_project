@@ -7,13 +7,9 @@ import logging
 from .prediction import *
 
 import os
-sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
-
-from train import *
-from train_multiple import * 
-from data_stuff import *
-
-
+from .algo_files.train import *
+from .algo_files.train_multiple import * 
+from .algo_files.data_stuff import *
 
 
 # TODO: import model
@@ -49,15 +45,21 @@ def ticker(request, ticker_id):
     single_stock_path = f'./final_models/{ticker_id}.pt'
     multi_stock_path = f'./final_models/general_model.pt'
 
-
-    single_percentage_out, single_absolute_out = get_prediction(single_stock_path, df)
+    # only show single model prediction if the single model .pt file exists /was generated. Else leave out of views
+    single_model_exists = os.path.exists(single_stock_path)
+    if single_model_exists:
+        context['single_model_exists'] = True
+        single_percentage_out, single_absolute_out = get_prediction(single_stock_path, df)
+        context['single_pred_percent'] =  single_percentage_out
+        context['single_pred_abs'] = single_absolute_out
+    else:
+        context['single_model_exists'] = False
+        context['single_pred_percent'] = None
+        context['single_pred_abs'] = None
+        
     multiple_precentage_out, multiple_absolute_out = get_prediction(multi_stock_path, df)
     #prediction_single = get_prediction(single_path, ticker_id)
     #prediction_multiple = get_prediction(multi_stock_path, ticker_id)
-
-
-    context['single_pred_percent'] =  single_percentage_out
-    context['single_pred_abs'] = single_absolute_out
     context['multiple_pred_percent'] = multiple_precentage_out
     context['multiple_pred_abs'] = multiple_absolute_out
     context["previous_price"] = round(float(df.get_n_days_data(1).Close), 2)
