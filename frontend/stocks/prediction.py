@@ -1,14 +1,13 @@
 import sys
-#from stocks.data import Data
-sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
+from pathlib import Path
+
+import torch
+
+from .data import Data
 
 from train import *
 from train_multiple import *
 from data_stuff import *
-import torch
-#from .data import get_n_days_data
-#from .data import get_transformed_data
-from .data import Data
 
 def get_prediction(path_of_pickle, df):
     '''

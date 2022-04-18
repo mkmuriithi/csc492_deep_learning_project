@@ -2,12 +2,15 @@ from this import d
 import yfinance as yf
 import sys
 import torch
+from pathlib import Path
 
-sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
-from train import *
-from train_multiple import *
-from data_stuff import *
+
 from sklearn.preprocessing import MinMaxScaler
+sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
+
+from train import *
+from train_multiple import * 
+from data_stuff import *
 
 
 
