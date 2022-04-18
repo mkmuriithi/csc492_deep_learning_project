@@ -3,11 +3,7 @@
 {% block content %}
 <div class="container text-left">
     <h1>{{ ticker_info.shortName }} ({{ ticker|upper }})</h1>
-    
-    {% for day_close in raw_30_days_adjclose %}
-        <p>{{day_close}}</p>
-    {% endfor %}
-
+  
     <!-- {{prediction}} -->
     <!-- then put the above 30 days adj_close + 1 day pred to graph -->
 

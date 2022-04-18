@@ -370,7 +370,7 @@ if __name__ == '__main__':
     except Exception as e:
         print("An exception occured while trying to create path for model pickles to be stored in")
 
-    ticker_to_train = "XOM" #defauly single stock model will be Exxon
+    ticker_to_train = "JPM" #defauly single stock model will be Exxon
 
     data = get_dataset(single=True, subset=False, ticker_to_train=ticker_to_train)
 
