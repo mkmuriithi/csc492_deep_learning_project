@@ -47,7 +47,7 @@ class StockDataset(Dataset):
     def __getitem__(self, idx):
         # return sequences
         # return
-        # ave to return the y corresponding to the last element in the sequence NOT first element
+        # ave to return the y corresponding to the last element in the sequence NOT first elementTen
         return Tensor(self.x[idx:idx+self.seq_length].values), Tensor(self.y.iloc[idx + self.seq_length].values), self.x[idx:idx+self.seq_length].values, self.y[idx:idx+self.seq_length].values
 
 

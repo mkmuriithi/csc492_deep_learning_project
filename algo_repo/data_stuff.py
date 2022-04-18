@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from ta.momentum import RSIIndicator as rsi
@@ -7,7 +8,8 @@ from ta.trend import sma_indicator as sma
 from ta.trend import EMAIndicator as ema
 from ta.volume import VolumeWeightedAveragePrice as vwap
 from StockDataLoader import *
-
+import os
+from tqdm import tqdm
 
 def add_features(data):
     data["Sma_10"] = sma(data.Close, window=10, fillna=False)
@@ -36,15 +38,16 @@ def get_treated(data, to_daily_returns=True, features_to_exclude=['Date']):
     return data
 
 
-def get_dataset(single=True, subset=False):
+def get_dataset(single=True, subset=False, ticker_to_train="XOM"):
     '''
     If single stock, then only do apple, and second parameter is not relevant
     If mulitstock, then second parameter determines if a subset of the stocks will be selected to be trained on
     on or if all stocks in the nyse_list will be trained on
+    NOTE that if 'single' is False, ticker_to_train is ignored
     '''
     data = None
     if single:
-        data = pd.read_csv("./Data/XOM.csv")
+        data = pd.read_csv(f'./Data/{ticker_to_train}.csv')
         data["Date"] = pd.to_datetime(data['Date'])
         return data
     else:
@@ -62,7 +65,7 @@ def get_multistock_dict(subset):
         pass
     else:
         # add all stocks to dict
-        for stock_dir_name in temp:
+        for stock_dir_name in tqdm(temp):
             stock_name = stock_dir_name.split(".")[0]
             df = pd.read_csv(f'./Data/{stock_dir_name}')
             df["Date"] = pd.to_datetime(df['Date'])

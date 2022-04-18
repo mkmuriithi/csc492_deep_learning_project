@@ -2,13 +2,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch
 import math
+import csv
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import DataLoader
 from torch import Tensor
+import numpy as np
 import matplotlib.pyplot as plt
 from StockDataLoader import StockDataset
 from sklearn.model_selection import train_test_split
-from utils import *
 from data_stuff import *
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from datetime import datetime
@@ -16,7 +17,8 @@ import logging
 import random
 import os
 import pickle
-
+import numpy as np
+import copy
 # setting seed for torch random number generator, for reproducability
 torch.manual_seed(42)
 np.random.seed(42)
@@ -65,15 +67,8 @@ class TransformerModel(nn.Module):
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, src: Tensor, src_mask: Tensor) -> Tensor:
-        """
-        Args:
-            src: Tensor, shape [batch_size, seq_len]
-            src_mask: Tensor, shape [seq_len, seq_len]
+    def forward(self, src, src_mask) :
 
-        Returns:
-            output Tensor of shape [batch_size, seq_len, ntoken]
-        """
         src = self.embedding(src)
         src = self.pos_encoder(src)
         output = self.transformer_encoder(src, src_mask)
@@ -93,10 +88,10 @@ class transf_params:
     lr = 0.01
 
 
-def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7, num_epochs=10,
-                 weight_decay=0.1):
+def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-6, num_epochs=10,
+                 weight_decay=0):
     # create training, valid and test sets of StockDataset type data
-    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
+    train_custom, valid_custom, test_custom = split_data(data, window=30, minmax=False)
     # normalize data
 
     # preserving reproducability in dataloader with
@@ -170,7 +165,6 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
                             X = X.cuda()
                             y = y.cuda()
                             mask = mask.cuda()
-
                         out = model(X, mask)
                         loss = criterion(out, y)
                         val_loss.append(loss.item())  # save validation loss
@@ -196,9 +190,9 @@ def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-7
     # print(f'Final Validation Loss {val_losses[-1]}')
     # graph loss
     plt.title(f"Training Curve (lr={learning_rate}, wd={weight_decay})")
+    plt.plot(iters, baseline_losses, label='baseline')
     plt.plot(iters, train_losses, label='Train')
     plt.plot(iters, val_losses, label='Validation')
-    plt.plot(iters, baseline_losses, label='baseline')
     plt.legend()
     plt.xlabel("Iterations")
     plt.ylabel("Loss")
@@ -265,7 +259,7 @@ def seed_worker(worker_id):
 
 
 def plot_predictions(model, data):
-    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=True)
+    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=False)
     train_dataloader = DataLoader(train_custom, batch_size=1, shuffle=True)
     val_dataloader = DataLoader(valid_custom, batch_size=1, shuffle=True)
 
@@ -347,8 +341,11 @@ def treat_single_stock(data):
     return data
 
 
-
-
+def getColor(c, N, idx):
+    import matplotlib as mpl
+    cmap = mpl.cm.get_cmap(c)
+    norm = mpl.colors.Normalize(vmin=0.0, vmax=N - 1)
+    return cmap(norm(idx))
 
 if __name__ == '__main__':
 
@@ -366,9 +363,9 @@ if __name__ == '__main__':
     except Exception as e:
         print("An exception occured while trying to create path for model pickles to be stored in")
 
-    # get list of stocks to train on
-    # data = yf.download(tickers="AAPL", interval='1d', groupby='ticker', auto_adjust='True', start="2007-07-01")
-    data = get_dataset(single=True, subset=False)
+    ticker_to_train = "JPM" #defauly single stock model will be Exxon
+
+    data = get_dataset(single=True, subset=False, ticker_to_train=ticker_to_train)
 
     data = treat_single_stock(data)
     # data = treat_multiple_stock(data)
@@ -377,5 +374,32 @@ if __name__ == '__main__':
     model = TransformerModel(transf_params)
     if torch.cuda.is_available():
         model = model.cuda()
+    
     train_losses, val_losses, baseline_losses, iters = train_single(model, data)
-    # pickle model for frontend
+    '''
+    lines = []
+    for lr in [1e-4, 1e-5, 1e-6, 1e-7]:
+        for wd in [0.1, 0.01, 0]:
+            model_cop = copy.deepcopy(model)
+            train_losses, val_losses, baseline_losses, iters = train_single(model_cop, data, num_epochs=50, learning_rate=lr, weight_decay=wd)
+            lines.append(val_losses + [f"lr={lr} wd={wd}"])
+    
+    fig_datetime = datetime.now().strftime("figures/fig_date_%m_%d_%Y_time_%H_%M")
+            
+    for i, line in enumerate(lines):
+        plt.plot(line[:-1], label=line[-1], color=getColor('hsv', len(lines) + 1, i))
+    
+    # save csv
+    with open(fig_datetime + ".csv", "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(lines)
+        
+    # save plot
+    plt.title("Hyperparameter Tuning (Validation Curves)")
+    plt.xlabel("Iterations")
+    plt.ylabel("Loss")
+    plt.yscale("log")
+    plt.legend()
+    plt.savefig(fig_datetime, dpi=300, bbox_inches='tight')
+    plt.show()
+    '''
