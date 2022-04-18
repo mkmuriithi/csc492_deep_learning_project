@@ -60,7 +60,7 @@ def ticker(request, ticker_id):
     context['single_pred_abs'] = single_absolute_out
     context['multiple_pred_percent'] = multiple_precentage_out
     context['multiple_pred_abs'] = multiple_absolute_out
-
+    context["previous_price"] = round(float(df.get_n_days_data(1).Close), 2)
 
     #make prediction
 

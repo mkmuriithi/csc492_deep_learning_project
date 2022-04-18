@@ -98,7 +98,7 @@ class transf_params:
 def train_single(model, data, optimizer='adam', batch_size=8, learning_rate=1e-6, num_epochs=10,
                  weight_decay=0):
     # create training, valid and test sets of StockDataset type data
-    train_custom, valid_custom, test_custom = split_data(data, window=60, minmax=False)
+    train_custom, valid_custom, test_custom = split_data(data, window=30, minmax=False)
     # normalize data
 
     # preserving reproducability in dataloader with
