@@ -40,7 +40,7 @@ def ticker(request, ticker_id):
     # TODO: pass to model
     #For a given stock, we will have individually trained models for that stock, and use the ticker ID and do
     # string formatting to get the appropriate single model
-    single_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/model_pickles/model_date_04_14_2022_time_19_51.pt"
+    single_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/model_pickles/final_model_2.pt"
     multi_stock_path = "/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo/multi_batch_model_pickles/model_date_04_16_2022_time_00_17.pt"
 
 

@@ -1,5 +1,5 @@
 import sys
-from stocks.data import get_transformed_data
+#from stocks.data import Data
 sys.path.append("/home/kagema/Documents/CSC 492/csc492_deep_learning_project/algo_repo")
 
 from train import *
@@ -37,7 +37,7 @@ def get_prediction(path_of_pickle, df):
     out = out.detach()
     out = out.numpy()
 
-    percentage_out = out
+    percentage_out = out*100
     absolute_out = out * float(df.get_n_days_data(1).Close)
     return  percentage_out, absolute_out
 

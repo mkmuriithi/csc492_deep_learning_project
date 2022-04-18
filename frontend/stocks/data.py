@@ -74,13 +74,9 @@ class Data:
         X_data = df.drop(columns=["Target"])
         y_data = df[["Target"]]
     
-    #minmax scaling features
-        X_scaler = MinMaxScaler()
-        X_scaler.fit(X_data)
-        X_scaled_data = X_scaler.transform(X_data)
-
+    
     #minmax scaling target, return to reverse scaling
-        data_tensor = torch.Tensor(X_scaled_data)
+        data_tensor = torch.Tensor(X_data.values)
         mask = torch.zeros(data_tensor.shape[0], data_tensor.shape[0])
         data_tensor = data_tensor.unsqueeze(0)
         return data_tensor, mask#, X_scaler
