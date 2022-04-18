@@ -42,7 +42,7 @@ def get_prediction(path_of_pickle, df):
 
     percentage_out = round(out*100,2)
 
-    absolute_out = last_price * (1 + float(df.get_n_days_data(1).Close))
+    absolute_out = last_price * (1 + out)
     absolute_out = round(absolute_out, 2)
 
 
